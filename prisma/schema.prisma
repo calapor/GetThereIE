@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+  reports   Report[]
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  stopId    String
+  routeId   String
+  tripId    String
+  type      String
+  vote      Boolean
+  createdAt DateTime @default(now())
+
+  @@unique([userId, tripId, type])
+}
