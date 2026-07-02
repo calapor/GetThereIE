@@ -1,10 +1,12 @@
 import { transit_realtime } from "gtfs-realtime-bindings";
 
 const NTA_BASE_URL = "https://api.nationaltransport.ie/gtfsr/v2";
-const CACHE_TTL_MS = 30_000;
+
+const FEED_TTL_MS = 15_000;
 
 let cachedFeed: transit_realtime.FeedMessage | null = null;
-let cacheExpiresAt = 0;
+let cachedAt = 0;
+let inFlight: Promise<transit_realtime.FeedMessage> | null = null;
 
 export interface BusArrival {
   tripId: string;
@@ -20,20 +22,35 @@ export interface BusArrival {
   stopId: string;
 }
 
-async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
-  const now = Date.now();
-  if (cachedFeed && now < cacheExpiresAt) return cachedFeed;
-
+async function downloadFeed(): Promise<transit_realtime.FeedMessage> {
   const apiKey = process.env.NTA_API_KEY ?? "";
   const res = await fetch(`${NTA_BASE_URL}/TripUpdates`, {
     headers: { "x-api-key": apiKey, "Cache-Control": "no-cache" },
     next: { revalidate: 0 },
   });
-  if (!res.ok) throw new Error(`NTA API ${res.status}`);
+  if (!res.ok) {
+    if (cachedFeed) {
+      console.warn(`NTA API ${res.status}; serving cached feed from ${new Date(cachedAt).toISOString()}`);
+      return cachedFeed;
+    }
+    throw new Error(`NTA API ${res.status}`);
+  }
   const buf = await res.arrayBuffer();
-  cachedFeed = transit_realtime.FeedMessage.decode(new Uint8Array(buf));
-  cacheExpiresAt = now + CACHE_TTL_MS;
-  return cachedFeed;
+  const feed = transit_realtime.FeedMessage.decode(new Uint8Array(buf));
+  cachedFeed = feed;
+  cachedAt = Date.now();
+  return feed;
+}
+
+async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
+  if (cachedFeed && Date.now() - cachedAt < FEED_TTL_MS) {
+    return cachedFeed;
+  }
+  if (inFlight) return inFlight;
+  inFlight = downloadFeed().finally(() => {
+    inFlight = null;
+  });
+  return inFlight;
 }
 
 export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
