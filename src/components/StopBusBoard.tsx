@@ -65,7 +65,9 @@ export default function StopBusBoard({ stopId, stopName, onPointsEarned }: Props
     );
   }
 
-  if (error) {
+  // Only show the hard error box on the very first load (no data yet). If we've
+  // already shown buses, a transient refresh failure keeps the last-known board.
+  if (error && !lastFetch) {
     return (
       <div className="mx-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
         {error}
@@ -77,6 +79,9 @@ export default function StopBusBoard({ stopId, stopName, onPointsEarned }: Props
     <div>
       {lastFetch && (
         <p className="text-xs text-gray-400 text-right px-4 mb-2">
+          {error ? (
+            <span className="text-amber-500">Couldn&apos;t refresh · </span>
+          ) : null}
           Updated {lastFetch.toLocaleTimeString()}
         </p>
       )}

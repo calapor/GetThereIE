@@ -16,15 +16,48 @@ export interface BusArrival {
   stopId: string;
 }
 
-async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
+// Shared in-memory cache of the full TripUpdates feed. The feed is large (~MBs)
+// and covers every stop, so one download serves all stop requests within the TTL.
+// This prevents hammering the NTA API, which rate-limits (HTTP 429) aggressively.
+const FEED_TTL_MS = 15_000; // below the client's 30s refresh interval
+
+let cachedFeed: transit_realtime.FeedMessage | null = null;
+let cachedAt = 0;
+let inFlight: Promise<transit_realtime.FeedMessage> | null = null;
+
+async function downloadFeed(): Promise<transit_realtime.FeedMessage> {
   const apiKey = process.env.NTA_API_KEY ?? "";
   const res = await fetch(`${NTA_BASE_URL}/TripUpdates`, {
     headers: { "x-api-key": apiKey, "Cache-Control": "no-cache" },
     next: { revalidate: 0 },
   });
-  if (!res.ok) throw new Error(`NTA API ${res.status}`);
+  if (!res.ok) {
+    // On rate-limit (or any upstream error), fall back to the last good feed
+    // rather than failing the request outright.
+    if (cachedFeed) {
+      console.warn(`NTA API ${res.status}; serving cached feed from ${new Date(cachedAt).toISOString()}`);
+      return cachedFeed;
+    }
+    throw new Error(`NTA API ${res.status}`);
+  }
   const buf = await res.arrayBuffer();
-  return transit_realtime.FeedMessage.decode(new Uint8Array(buf));
+  const feed = transit_realtime.FeedMessage.decode(new Uint8Array(buf));
+  cachedFeed = feed;
+  cachedAt = Date.now();
+  return feed;
+}
+
+async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
+  // Serve a fresh-enough cached feed without hitting NTA.
+  if (cachedFeed && Date.now() - cachedAt < FEED_TTL_MS) {
+    return cachedFeed;
+  }
+  // Collapse concurrent requests into a single upstream download.
+  if (inFlight) return inFlight;
+  inFlight = downloadFeed().finally(() => {
+    inFlight = null;
+  });
+  return inFlight;
 }
 
 export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
