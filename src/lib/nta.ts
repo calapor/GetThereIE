@@ -2,6 +2,12 @@ import { transit_realtime } from "gtfs-realtime-bindings";
 
 const NTA_BASE_URL = "https://api.nationaltransport.ie/gtfsr/v2";
 
+const FEED_TTL_MS = 15_000;
+
+let cachedFeed: transit_realtime.FeedMessage | null = null;
+let cachedAt = 0;
+let inFlight: Promise<transit_realtime.FeedMessage> | null = null;
+
 export interface BusArrival {
   tripId: string;
   routeId: string;
@@ -16,15 +22,6 @@ export interface BusArrival {
   stopId: string;
 }
 
-// Shared in-memory cache of the full TripUpdates feed. The feed is large (~MBs)
-// and covers every stop, so one download serves all stop requests within the TTL.
-// This prevents hammering the NTA API, which rate-limits (HTTP 429) aggressively.
-const FEED_TTL_MS = 15_000; // below the client's 30s refresh interval
-
-let cachedFeed: transit_realtime.FeedMessage | null = null;
-let cachedAt = 0;
-let inFlight: Promise<transit_realtime.FeedMessage> | null = null;
-
 async function downloadFeed(): Promise<transit_realtime.FeedMessage> {
   const apiKey = process.env.NTA_API_KEY ?? "";
   const res = await fetch(`${NTA_BASE_URL}/TripUpdates`, {
@@ -32,8 +29,6 @@ async function downloadFeed(): Promise<transit_realtime.FeedMessage> {
     next: { revalidate: 0 },
   });
   if (!res.ok) {
-    // On rate-limit (or any upstream error), fall back to the last good feed
-    // rather than failing the request outright.
     if (cachedFeed) {
       console.warn(`NTA API ${res.status}; serving cached feed from ${new Date(cachedAt).toISOString()}`);
       return cachedFeed;
@@ -48,11 +43,9 @@ async function downloadFeed(): Promise<transit_realtime.FeedMessage> {
 }
 
 async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
-  // Serve a fresh-enough cached feed without hitting NTA.
   if (cachedFeed && Date.now() - cachedAt < FEED_TTL_MS) {
     return cachedFeed;
   }
-  // Collapse concurrent requests into a single upstream download.
   if (inFlight) return inFlight;
   inFlight = downloadFeed().finally(() => {
     inFlight = null;
