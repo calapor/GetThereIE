@@ -1,5 +1,5 @@
 import { transit_realtime } from "gtfs-realtime-bindings";
-import { getScheduledArrivalSecs, getHeadsignForRoute } from "./gtfs-db";
+import { getScheduledArrivalSecs, getHeadsignForRoute, getStopName } from "./gtfs-db";
 import fs from "fs";
 import path from "path";
 
@@ -173,4 +173,83 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
 
   upcoming.sort((a, b) => a.arrivalTimestamp - b.arrivalTimestamp);
   return upcoming;
+}
+
+export interface LiveTrip {
+  tripId: string;
+  routeShortName: string;
+  headsign: string;
+  directionId: number;
+  nextStopId: string;
+  nextStopName: string;
+  arrivalTimestamp: number;
+  minutesAway: number;
+  delayMinutes: number;
+}
+
+// "Where are the <route> buses now?" — for each active trip on the route, find
+// the next stop it is approaching (earliest stop-time update still in the
+// future) with its ETA. Reuses the cached feed, so no extra NTA calls.
+export async function getLiveTripsForRoute(routeShortName: string): Promise<LiveTrip[]> {
+  const feed = await fetchFeed();
+  const now = Math.floor(Date.now() / 1000);
+  const target = routeShortName.trim().toUpperCase();
+  const trips: LiveTrip[] = [];
+
+  for (const entity of feed.entity) {
+    const tu = entity.tripUpdate;
+    if (!tu) continue;
+
+    const trip = tu.trip;
+    const routeId = trip?.routeId || trip?.tripId?.split("_")[0] || "";
+    // RT routeId is like "1 74" or "1 15B c a" — second token is the short name
+    const shortName = routeId.split(" ")[1] || routeId;
+    if (shortName.toUpperCase() !== target) continue;
+
+    const tripId = trip?.tripId || entity.id;
+    const startDate = (trip as any)?.startDate || todayYYYYMMDD();
+    const dirId = Number(trip?.directionId ?? 0);
+
+    // Walk stop-time updates in order and take the first one still ahead of us.
+    let next: { stopId: string; eta: number; delay: number } | null = null;
+    for (const stu of tu.stopTimeUpdate ?? []) {
+      const stopId = stu.stopId;
+      if (!stopId) continue;
+      const arrival = stu.arrival ?? stu.departure;
+      const rtTime = Number(arrival?.time ?? 0);
+      const delay = Number(arrival?.delay ?? 0);
+      const arrivalSecs = getScheduledArrivalSecs(tripId, stopId);
+
+      let eta: number;
+      if (rtTime > 0) {
+        eta = rtTime;
+      } else if (arrivalSecs !== null) {
+        eta = scheduledToUnix(arrivalSecs, startDate) + delay;
+      } else {
+        continue;
+      }
+
+      if (eta > now) {
+        next = { stopId, eta, delay };
+        break;
+      }
+    }
+
+    if (!next) continue;
+
+    trips.push({
+      tripId,
+      routeShortName: shortName,
+      headsign: getHeadsignForRoute(shortName, dirId) ?? "",
+      directionId: dirId,
+      nextStopId: next.stopId,
+      nextStopName: getStopName(next.stopId) ?? next.stopId,
+      arrivalTimestamp: next.eta,
+      minutesAway: Math.max(0, Math.floor((next.eta - now) / 60)),
+      delayMinutes: Math.round(next.delay / 60),
+    });
+  }
+
+  trips.sort((a, b) => a.arrivalTimestamp - b.arrivalTimestamp);
+  return trips;
 }

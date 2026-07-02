@@ -21,11 +21,18 @@ interface BusData {
 interface Props {
   stopId: string;
   onPointsEarned: () => void;
+  // When set, only show buses whose route short name matches (faceted filter).
+  routeFilter?: string;
+  // Suppress the stop-name header (e.g. when a chip above already shows it).
+  hideHeader?: boolean;
+  // Reports the distinct route short names currently arriving, so a parent can
+  // offer route-narrowing pills (stop-first faceted flow).
+  onRoutesAvailable?: (routeShortNames: string[]) => void;
 }
 
 const REFRESH_INTERVAL = 30_000;
 
-export default function StopBusBoard({ stopId, onPointsEarned }: Props) {
+export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hideHeader, onRoutesAvailable }: Props) {
   const [buses, setBuses] = useState<BusData[]>([]);
   const [stopName, setStopName] = useState<string>(stopId);
   const [loading, setLoading] = useState(true);
@@ -54,8 +61,28 @@ export default function StopBusBoard({ stopId, onPointsEarned }: Props) {
     return () => clearInterval(id);
   }, [fetchBuses]);
 
-  // Group buses by routeId
-  const byRoute = buses.reduce<Record<string, BusData[]>>((acc, bus) => {
+  // Report the distinct routes currently arriving so a parent can offer
+  // route-narrowing pills. Keyed on a stable signature to avoid loops.
+  const routeSignature = buses.map((b) => b.routeShortName).join(",");
+  useEffect(() => {
+    if (!onRoutesAvailable) return;
+    const seen = new Set<string>();
+    const names: string[] = [];
+    for (const b of buses) {
+      if (!seen.has(b.routeShortName)) {
+        seen.add(b.routeShortName);
+        names.push(b.routeShortName);
+      }
+    }
+    onRoutesAvailable(names);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeSignature]);
+
+  // Optionally narrow to a single route (faceted filter), then group by routeId
+  const visibleBuses = routeFilter
+    ? buses.filter((b) => b.routeShortName === routeFilter)
+    : buses;
+  const byRoute = visibleBuses.reduce<Record<string, BusData[]>>((acc, bus) => {
     if (!acc[bus.routeId]) acc[bus.routeId] = [];
     acc[bus.routeId].push(bus);
     return acc;
@@ -81,8 +108,12 @@ export default function StopBusBoard({ stopId, onPointsEarned }: Props) {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 mb-1">{stopName}</h1>
-      <p className="text-xs text-gray-400 mb-3">{stopId}</p>
+      {!hideHeader && (
+        <>
+          <h1 className="text-xl font-bold text-gray-900 mb-1">{stopName}</h1>
+          <p className="text-xs text-gray-400 mb-3">{stopId}</p>
+        </>
+      )}
       {lastFetch && (
         <p className="text-xs text-gray-400 text-right px-4 mb-2">
           {error ? (

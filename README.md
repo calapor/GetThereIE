@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bus Tracker Ireland
+
+A Next.js app for live Dublin Bus tracking, built on the NTA GTFS-Realtime feed plus a
+local static GTFS schedule. You can search by route or stop, browse nearby stops, and see
+live arrival ETAs computed from the realtime feed.
 
 ## Getting Started
 
-First, run the development server:
+Requires Node.js and a populated `gtfs.db` (see [Static GTFS data](#static-gtfs-data)).
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3005](http://localhost:3005).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Set `NTA_API_KEY` in `.env.local` — a subscription key for the NTA GTFS-R API
+(`https://api.nationaltransport.ie/gtfsr/v2`). The realtime feed is cached server-side in
+`src/lib/nta.ts` (~30s) to avoid rate limits, so don't fetch it per request.
 
-## Learn More
+## Static GTFS data
 
-To learn more about Next.js, take a look at the following resources:
+Live ETAs are computed by joining a live trip to its scheduled arrival in a local SQLite
+database (`gtfs.db`). The Dublin Bus realtime feed sends only a `delay` for most stops, so
+**the static schedule must be present and current** — without it, no ETA can be produced.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> ⚠️ **Keep the static data fresh.** The NTA rotates trip-ID prefixes periodically
+> (e.g. `5242_*` → `5722_*`). If the imported schedule is stale, live trip IDs no longer
+> match and the live board silently shows nothing. Reimport a current feed when this happens.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Importing
 
-## Deploy on Vercel
+Download the current per-operator zip and run the import pipeline (order matters — the
+first step recreates `gtfs.db`):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+curl -sL https://www.transportforireland.ie/transitData/Data/GTFS_Dublin_Bus.zip -o /tmp/GTFS_DB.zip
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+node scripts/import-gtfs.mjs /tmp/GTFS_DB.zip   # builds stop_times (~2.4M rows)
+node scripts/add-stops.mjs   /tmp/GTFS_DB.zip   # stops table incl. lat/lon
+node scripts/add-routes.mjs  /tmp/GTFS_DB.zip   # routes + trips tables
+```
+
+Use the per-operator `GTFS_Dublin_Bus.zip` (~30MB) rather than the all-operators
+`GTFS_All.zip` — the latter produces a much larger database.
+
+Additional operators can be layered in with `node scripts/add-operator.mjs <zip>`.
+
+`gtfs.db` is generated and git-ignored — it is not committed.
+
+## API endpoints
+
+| Endpoint | Query params | Returns |
+| --- | --- | --- |
+| `GET /api/search` | `q` | Combined route + stop search results |
+| `GET /api/routes/search` | `q` | Matching routes (id, short/long name) |
+| `GET /api/routes/stops` | `routeId`, optional `q` | Ordered stops for a route, with coordinates |
+| `GET /api/routes/live` | `route` | Live trips for a route: next stop, `minutesAway`, `delayMinutes`, headsign, direction |
+| `GET /api/stops/search` | `q` | Matching stops |
+| `GET /api/stops/nearby` | `lat`, `lon` | Nearest stops with `distanceMeters` |
+| `GET /api/buses/[stopId]` | — | Live arrivals for a single stop |
+
+## Project layout
+
+- `src/lib/nta.ts` — NTA realtime feed fetch/cache and `getLiveTripsForRoute`
+- `src/lib/gtfs-db.ts` — SQLite query helpers (scheduled arrivals, stops, routes, nearby)
+- `src/components/SearchFilter.tsx` — route/stop search + filter UI
+- `src/components/StopBusBoard.tsx` — per-stop live board
+- `scripts/*.mjs` — GTFS import pipeline

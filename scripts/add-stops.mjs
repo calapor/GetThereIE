@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Patches the existing gtfs.db with a stops table (stop_id, stop_name).
+// Patches the existing gtfs.db with a stops table (stop_id, stop_name, stop_lat, stop_lon).
 // Usage: node scripts/add-stops.mjs <path-to-GTFS_zip>
 import Database from 'better-sqlite3';
 import readline from 'readline';
@@ -19,17 +19,23 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.exec(`
   DROP TABLE IF EXISTS stops;
-  CREATE TABLE stops (stop_id TEXT PRIMARY KEY, stop_name TEXT NOT NULL);
+  CREATE TABLE stops (
+    stop_id   TEXT PRIMARY KEY,
+    stop_name TEXT NOT NULL,
+    stop_lat  REAL,
+    stop_lon  REAL
+  );
+  CREATE INDEX idx_stops_latlon ON stops(stop_lat, stop_lon);
 `);
 
-const insert = db.prepare('INSERT OR REPLACE INTO stops (stop_id, stop_name) VALUES (?, ?)');
+const insert = db.prepare('INSERT OR REPLACE INTO stops (stop_id, stop_name, stop_lat, stop_lon) VALUES (?, ?, ?, ?)');
 const batchInsert = db.transaction((rows) => { for (const r of rows) insert.run(r); });
 
 await new Promise((resolve, reject) => {
   const child = spawn('unzip', ['-p', GTFS_ZIP, 'stops.txt']);
   const rl = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
   let firstLine = true;
-  let idxId = 0, idxName = 2;
+  let idxId = 0, idxName = 2, idxLat = -1, idxLon = -1;
   let batch = [], total = 0;
 
   rl.on('line', (line) => {
@@ -39,13 +45,17 @@ await new Promise((resolve, reject) => {
       const cols = line.split(',');
       idxId   = cols.indexOf('stop_id');
       idxName = cols.indexOf('stop_name');
+      idxLat  = cols.indexOf('stop_lat');
+      idxLon  = cols.indexOf('stop_lon');
       return;
     }
     const f = line.split(',');
     const stopId   = f[idxId]?.trim();
     const stopName = f[idxName]?.trim();
     if (!stopId || !stopName) return;
-    batch.push([stopId, stopName]);
+    const lat = idxLat >= 0 ? parseFloat(f[idxLat]) : NaN;
+    const lon = idxLon >= 0 ? parseFloat(f[idxLon]) : NaN;
+    batch.push([stopId, stopName, Number.isFinite(lat) ? lat : null, Number.isFinite(lon) ? lon : null]);
     if (batch.length >= 5_000) {
       batchInsert(batch); total += batch.length; batch = [];
       process.stdout.write(`\r  ${total.toLocaleString()} stops...`);
