@@ -32,13 +32,12 @@ export default function StopPage({ params }: Props) {
         >
           ← Back
         </button>
-        <span className="text-sm text-gray-500">Stop {decodedId}</span>
+        <span className="text-sm text-gray-500">Stop</span>
       </div>
 
       <div className="flex-1 px-4 py-4">
         <StopBusBoard
           stopId={decodedId}
-          stopName={decodedId}
           onPointsEarned={handlePointsEarned}
         />
       </div>

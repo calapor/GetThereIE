@@ -4,28 +4,33 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredUser } from "@/lib/user";
 import UsernamePrompt from "@/components/UsernamePrompt";
+import RouteSearch, { RouteResult } from "@/components/RouteSearch";
+import RouteStopSearch from "@/components/RouteStopSearch";
+import PointsHeader from "@/components/PointsHeader";
 
-const RECENT_KEY = "busTrackerRecent";
+const RECENT_KEY = "busTrackerRecentV2";
 
-function getRecent(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
+interface RecentStop {
+  id: string;
+  name: string;
 }
 
-function saveRecent(stopId: string) {
-  const prev = getRecent().filter((s) => s !== stopId);
-  localStorage.setItem(RECENT_KEY, JSON.stringify([stopId, ...prev].slice(0, 5)));
+function getRecent(): RecentStop[] {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]"); }
+  catch { return []; }
+}
+
+function saveRecent(stop: RecentStop) {
+  const prev = getRecent().filter((s) => s.id !== stop.id);
+  localStorage.setItem(RECENT_KEY, JSON.stringify([stop, ...prev].slice(0, 8)));
 }
 
 export default function Home() {
   const router = useRouter();
   const [needsUsername, setNeedsUsername] = useState(false);
-  const [stopId, setStopId] = useState("");
-  const [recent, setRecent] = useState<string[]>([]);
+  const [recent, setRecent] = useState<RecentStop[]>([]);
   const [ready, setReady] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<RouteResult | null>(null);
 
   useEffect(() => {
     if (!getStoredUser()) setNeedsUsername(true);
@@ -33,66 +38,51 @@ export default function Home() {
     setReady(true);
   }, []);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const id = stopId.trim();
-    if (!id) return;
-    saveRecent(id);
-    router.push(`/stop/${encodeURIComponent(id)}`);
-  }
-
-  function goToStop(id: string) {
-    saveRecent(id);
-    router.push(`/stop/${encodeURIComponent(id)}`);
+  function goToStop(stop: RecentStop) {
+    saveRecent(stop);
+    setRecent(getRecent());
+    router.push(`/stop/${encodeURIComponent(stop.id)}`);
   }
 
   if (!ready) return null;
-
-  if (needsUsername) {
-    return <UsernamePrompt onDone={() => setNeedsUsername(false)} />;
-  }
+  if (needsUsername) return <UsernamePrompt onDone={() => setNeedsUsername(false)} />;
 
   return (
-    <main className="flex flex-col min-h-screen px-4 pt-16">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">🚌 Bus Tracker</h1>
-      <p className="text-center text-sm text-gray-500 mb-8">Ireland — powered by NTA real-time data</p>
+    <div className="flex flex-col min-h-screen">
+      <PointsHeader refreshTrigger={0} />
 
-      <form onSubmit={handleSubmit} className="flex gap-2 mb-8">
-        <input
-          type="text"
-          value={stopId}
-          onChange={(e) => setStopId(e.target.value)}
-          placeholder="Stop ID (e.g. 8220DB000004)"
-          className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-400"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white rounded-lg px-5 py-3 font-semibold text-base disabled:opacity-50"
-          disabled={!stopId.trim()}
-        >
-          Go
-        </button>
-      </form>
+      <main className="flex flex-col px-4 pt-10">
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-1">🚌 Bus Tracker</h1>
+        <p className="text-center text-sm text-gray-500 mb-8">Ireland — powered by NTA real-time data</p>
 
-      {recent.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Recent stops</p>
-          <div className="flex flex-col gap-2">
-            {recent.map((id) => (
-              <button
-                key={id}
-                onClick={() => goToStop(id)}
-                className="text-left px-4 py-3 border border-gray-200 rounded-lg text-sm text-blue-600 font-medium hover:bg-gray-50 active:bg-gray-100"
-              >
-                Stop {id}
-              </button>
-            ))}
+        {!selectedRoute ? (
+          <RouteSearch onSelect={setSelectedRoute} />
+        ) : (
+          <RouteStopSearch
+            route={selectedRoute}
+            onBack={() => setSelectedRoute(null)}
+            onSelect={(stop) => goToStop({ id: stop.stop_id, name: stop.stop_name })}
+          />
+        )}
+
+        {!selectedRoute && recent.length > 0 && (
+          <div className="mt-8">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Recent stops</p>
+            <div className="flex flex-col gap-2">
+              {recent.map((stop) => (
+                <button
+                  key={stop.id}
+                  onClick={() => goToStop(stop)}
+                  className="text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 active:bg-gray-100"
+                >
+                  <span className="text-sm font-medium text-gray-900">{stop.name}</span>
+                  <span className="block text-xs text-gray-400">{stop.id}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+      </main>
+    </div>
   );
 }

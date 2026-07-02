@@ -6,8 +6,11 @@ import RouteCard from "./RouteCard";
 interface BusData {
   tripId: string;
   routeId: string;
+  routeShortName: string;
+  headsign: string;
   stopId: string;
   arrivalTime: string;
+  scheduledTime: string;
   minutesAway: number;
   delayMinutes: number;
   isStopping: boolean;
@@ -17,14 +20,14 @@ interface BusData {
 
 interface Props {
   stopId: string;
-  stopName: string;
   onPointsEarned: () => void;
 }
 
 const REFRESH_INTERVAL = 30_000;
 
-export default function StopBusBoard({ stopId, stopName, onPointsEarned }: Props) {
+export default function StopBusBoard({ stopId, onPointsEarned }: Props) {
   const [buses, setBuses] = useState<BusData[]>([]);
+  const [stopName, setStopName] = useState<string>(stopId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
@@ -35,6 +38,7 @@ export default function StopBusBoard({ stopId, stopName, onPointsEarned }: Props
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       setBuses(data.buses ?? []);
+      if (data.stopName) setStopName(data.stopName);
       setLastFetch(new Date());
       setError(null);
     } catch (e) {
@@ -77,6 +81,8 @@ export default function StopBusBoard({ stopId, stopName, onPointsEarned }: Props
 
   return (
     <div>
+      <h1 className="text-xl font-bold text-gray-900 mb-1">{stopName}</h1>
+      <p className="text-xs text-gray-400 mb-3">{stopId}</p>
       {lastFetch && (
         <p className="text-xs text-gray-400 text-right px-4 mb-2">
           {error ? (

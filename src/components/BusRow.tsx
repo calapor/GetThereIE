@@ -1,5 +1,6 @@
 interface BusRowData {
   arrivalTime: string;
+  scheduledTime: string;
   minutesAway: number;
   delayMinutes: number;
   isStopping: boolean;
@@ -11,16 +12,10 @@ interface Props {
   bus: BusRowData;
 }
 
-function formatArriving(minutesAway: number, arrivalTime: string): string {
+function formatCountdown(minutesAway: number): string {
   if (minutesAway === 0) return "DUE";
   if (minutesAway <= 60) return `${minutesAway} min`;
-  return arrivalTime;
-}
-
-function formatDelay(delayMinutes: number): string {
-  if (Math.abs(delayMinutes) <= 1) return "On time";
-  if (delayMinutes > 0) return `+${delayMinutes} min`;
-  return `${delayMinutes} min`;
+  return "";
 }
 
 function formatOccupancy(status: string | null): string {
@@ -43,29 +38,46 @@ function formatHistorical(pct: number | null): string {
 }
 
 export default function BusRow({ bus }: Props) {
-  const delayColor =
-    bus.delayMinutes <= 1
-      ? "text-green-600"
-      : bus.delayMinutes <= 4
-      ? "text-yellow-600"
-      : "text-red-600";
+  const isLate = bus.delayMinutes > 1;
+  const isEarly = bus.delayMinutes < -1;
+  const onTime = !isLate && !isEarly;
+
+  const delayLabel = onTime
+    ? "On time"
+    : isLate
+    ? `+${bus.delayMinutes} min late`
+    : `${Math.abs(bus.delayMinutes)} min early`;
+
+  const delayColor = onTime ? "text-green-600" : isLate ? "text-red-500" : "text-yellow-600";
 
   return (
     <tr className="border-b border-gray-100 last:border-0">
-      <td className="py-2 px-2 text-sm font-semibold">
-        {formatArriving(bus.minutesAway, bus.arrivalTime)}
+      {/* Scheduled time */}
+      <td className="py-2 px-2">
+        <span className="text-sm font-semibold text-gray-800">{bus.scheduledTime}</span>
       </td>
-      <td className={`py-2 px-2 text-sm font-medium ${delayColor}`}>
-        {formatDelay(bus.delayMinutes)}
+
+      {/* Real-time ETA */}
+      <td className="py-2 px-2">
+        <span className={`text-sm font-semibold ${onTime ? "text-gray-800" : delayColor}`}>
+          {bus.arrivalTime}
+        </span>
+        {bus.minutesAway <= 60 && (
+          <span className="block text-xs text-gray-400">{formatCountdown(bus.minutesAway)}</span>
+        )}
       </td>
+
+      {/* Delay */}
+      <td className={`py-2 px-2 text-xs font-medium ${delayColor}`}>
+        {delayLabel}
+      </td>
+
+      {/* Occupancy */}
       <td className="py-2 px-2 text-sm text-gray-500">
         {formatOccupancy(bus.occupancyStatus)}
       </td>
-      <td className="py-2 px-2 text-sm">
-        <span className={bus.isStopping ? "text-green-600" : "text-red-500"}>
-          {bus.isStopping ? "Yes" : "No"}
-        </span>
-      </td>
+
+      {/* Historical (user votes) */}
       <td className="py-2 px-2 text-sm text-gray-500">
         {formatHistorical(bus.historicalStopPct)}
       </td>

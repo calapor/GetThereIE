@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBusesForStop } from "@/lib/nta";
+import { getStopName } from "@/lib/gtfs-db";
 import { prisma } from "@/lib/db";
 
 export async function GET(
@@ -27,7 +28,8 @@ export async function GET(
       })
     );
 
-    return NextResponse.json({ stopId, fetchedAt: new Date().toISOString(), buses: enriched });
+    const stopName = getStopName(stopId) ?? stopId;
+    return NextResponse.json({ stopId, stopName, fetchedAt: new Date().toISOString(), buses: enriched });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 502 });

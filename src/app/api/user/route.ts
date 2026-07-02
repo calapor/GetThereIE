@@ -14,11 +14,10 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(user);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    // P2002 = unique constraint violation
-    if (msg.includes("P2002") || msg.includes("unique") || msg.includes("UNIQUE")) {
+    if ((err as any)?.code === "P2002") {
       return NextResponse.json({ error: "Username already taken" }, { status: 409 });
     }
+    const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

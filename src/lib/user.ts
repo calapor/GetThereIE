@@ -33,7 +33,10 @@ export async function registerUser(username: string): Promise<StoredUser> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username }),
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to register");
+  }
   const user = await res.json();
   setStoredUser(user);
   return user;

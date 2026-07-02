@@ -9,8 +9,11 @@ import { getStoredUser, updateStoredPoints } from "@/lib/user";
 interface BusData {
   tripId: string;
   routeId: string;
+  routeShortName: string;
+  headsign: string;
   stopId: string;
   arrivalTime: string;
+  scheduledTime: string;
   minutesAway: number;
   delayMinutes: number;
   isStopping: boolean;
@@ -82,20 +85,23 @@ export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEa
         <PointsAlert points={alert.points} multiplier={alert.multiplier} onClose={dismissAlert} />
       )}
       <div className="border border-gray-300 rounded-lg mb-4 overflow-hidden">
-        <div className="bg-gray-50 px-3 py-2 border-b border-gray-300">
-          <span className="font-semibold text-sm text-gray-800">
-            {routeId} – {stopName}
+        <div className="bg-gray-50 px-3 py-2 border-b border-gray-300 flex items-baseline gap-2">
+          <span className="font-bold text-sm text-blue-700 shrink-0">
+            {buses[0]?.routeShortName || routeId}
           </span>
+          {buses[0]?.headsign && (
+            <span className="text-sm text-gray-700">→ {buses[0].headsign}</span>
+          )}
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-white">
-                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Arriving</th>
-                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Delay</th>
+                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Scheduled</th>
+                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Expected</th>
+                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Status</th>
                 <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Fullness</th>
-                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Stopping?</th>
                 <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Historical</th>
               </tr>
             </thead>
