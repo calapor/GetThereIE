@@ -90,8 +90,8 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="flex justify-center py-16">
+        <div className="w-10 h-10 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -100,43 +100,53 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
   // already shown buses, a transient refresh failure keeps the last-known board.
   if (error && !lastFetch) {
     return (
-      <div className="mx-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+      <div className="p-4 bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 rounded-lg text-sm text-[var(--destructive)]">
         {error}
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       {!hideHeader && (
-        <>
-          <h1 className="text-xl font-bold text-gray-900 mb-1">{stopName}</h1>
-          <p className="text-xs text-gray-400 mb-3">{stopId}</p>
-        </>
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">{stopName}</h1>
+          <p className="text-xs text-[var(--muted)]">{stopId}</p>
+        </div>
       )}
       {lastFetch && (
-        <p className="text-xs text-gray-400 text-right px-4 mb-2">
-          {error ? (
-            <span className="text-amber-500">Couldn&apos;t refresh · </span>
-          ) : null}
-          Updated {lastFetch.toLocaleTimeString()}
-        </p>
+        <div className="flex items-center justify-between px-2 py-1">
+          <p className="text-xs text-[var(--muted)]">
+            {error ? (
+              <span className="text-[var(--warning)]">Refresh failed • </span>
+            ) : null}
+            Updated {lastFetch.toLocaleTimeString()}
+          </p>
+          <button
+            onClick={() => { setLoading(true); fetchBuses(); }}
+            className="text-xs font-medium text-[var(--primary)] hover:text-[var(--primary-dark)] transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
       )}
-      {Object.entries(byRoute).map(([routeId, routeBuses]) => (
-        <RouteCard
-          key={routeId}
-          routeId={routeId}
-          stopId={stopId}
-          stopName={stopName}
-          buses={routeBuses}
-          onPointsEarned={onPointsEarned}
-        />
-      ))}
-      {Object.keys(byRoute).length === 0 && (
-        <p className="text-center text-gray-400 py-8 text-sm">
-          No upcoming buses at this stop.
-        </p>
-      )}
+      <div className="space-y-3">
+        {Object.entries(byRoute).map(([routeId, routeBuses]) => (
+          <RouteCard
+            key={routeId}
+            routeId={routeId}
+            stopId={stopId}
+            stopName={stopName}
+            buses={routeBuses}
+            onPointsEarned={onPointsEarned}
+          />
+        ))}
+        {Object.keys(byRoute).length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-[var(--muted)] text-sm">No upcoming buses at this stop</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -22,12 +22,14 @@ export default function Home() {
   if (needsUsername) return <UsernamePrompt onDone={() => setNeedsUsername(false)} />;
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-[var(--background)]">
       <PointsHeader refreshTrigger={refreshTrigger} />
 
-      <main className="flex flex-col px-4 pt-10">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-1">🚌 Bus Tracker</h1>
-        <p className="text-center text-sm text-gray-500 mb-8">Ireland — powered by NTA real-time data</p>
+      <main className="flex-1 flex flex-col px-4 py-8 gap-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-[var(--foreground)]">Bus Tracker</h1>
+          <p className="text-[var(--muted)] text-sm">Track Dublin buses in real-time • Powered by NTA</p>
+        </div>
 
         <SearchFilter onPointsEarned={handlePointsEarned} />
       </main>

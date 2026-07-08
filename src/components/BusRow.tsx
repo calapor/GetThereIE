@@ -50,35 +50,39 @@ export default function BusRow({ bus }: Props) {
 
   const delayColor = onTime ? "text-green-600" : isLate ? "text-red-500" : "text-yellow-600";
 
+  const delayColorClass = onTime ? "text-[var(--accent)]" : isLate ? "text-[var(--destructive)]" : "text-[var(--warning)]";
+
   return (
-    <tr className="border-b border-gray-100 last:border-0">
+    <tr className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--background)] transition-colors">
       {/* Scheduled time */}
-      <td className="py-2 px-2">
-        <span className="text-sm font-semibold text-gray-800">{bus.scheduledTime}</span>
+      <td className="py-3 px-3">
+        <span className="text-sm font-medium text-[var(--foreground)]">{bus.scheduledTime}</span>
       </td>
 
       {/* Real-time ETA */}
-      <td className="py-2 px-2">
-        <span className={`text-sm font-semibold ${onTime ? "text-gray-800" : delayColor}`}>
-          {bus.arrivalTime}
-        </span>
-        {bus.minutesAway <= 60 && (
-          <span className="block text-xs text-gray-400">{formatCountdown(bus.minutesAway)}</span>
-        )}
+      <td className="py-3 px-3">
+        <div>
+          <span className={`text-sm font-bold ${onTime ? "text-[var(--foreground)]" : delayColorClass}`}>
+            {bus.arrivalTime}
+          </span>
+          {bus.minutesAway <= 60 && (
+            <span className="block text-xs text-[var(--muted)] font-medium mt-0.5">{formatCountdown(bus.minutesAway)}</span>
+          )}
+        </div>
       </td>
 
       {/* Delay */}
-      <td className={`py-2 px-2 text-xs font-medium ${delayColor}`}>
+      <td className={`py-3 px-3 text-xs font-semibold ${delayColorClass}`}>
         {delayLabel}
       </td>
 
       {/* Occupancy */}
-      <td className="py-2 px-2 text-sm text-gray-500">
+      <td className="py-3 px-3 text-sm text-[var(--muted)]">
         {formatOccupancy(bus.occupancyStatus)}
       </td>
 
       {/* Historical (user votes) */}
-      <td className="py-2 px-2 text-sm text-gray-500">
+      <td className="py-3 px-3 text-sm text-[var(--muted)]">
         {formatHistorical(bus.historicalStopPct)}
       </td>
     </tr>
