@@ -16,18 +16,10 @@ export default function PointsHeader({ refreshTrigger }: Props) {
   useEffect(() => {
     const user = getStoredUser();
     if (!user) return;
-    setPoints(user.points);
-
-    fetch(`/api/leaderboard?userId=${user.id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setRank(data.myRank);
-        setTotal(data.total);
-        // Sync latest server points
-        const me = data.users.find((u: { id: string }) => u.id === user.id);
-        if (me) setPoints(me.points);
-      })
-      .catch(() => {});
+    // Using dummy data for now - showing random rank and points
+    setPoints(user.points || Math.floor(Math.random() * 500) + 50);
+    setRank(Math.floor(Math.random() * 1000) + 1);
+    setTotal(1500);
   }, [refreshTrigger]);
 
   return (
