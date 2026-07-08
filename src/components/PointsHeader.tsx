@@ -23,8 +23,10 @@ export default function PointsHeader({ refreshTrigger }: Props) {
   }, [refreshTrigger]);
 
   return (
-    <header className="sticky top-0 z-40 bg-[var(--card)] border-b border-[var(--border)] backdrop-blur-sm px-4 py-4 flex items-center justify-between shadow-sm">
-      <div className="flex flex-col gap-0.5">
+    <header className="sticky top-0 z-40 bg-[var(--card)] border-b border-[var(--border)] backdrop-blur-sm px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-2.5">
+        <img src="/logo.png" alt="GetThereIE" className="h-8 w-auto" />
+        <div className="flex flex-col gap-0.5">
         {points !== null ? (
           <>
             <div className="text-lg font-bold text-[var(--primary)]">
@@ -39,6 +41,7 @@ export default function PointsHeader({ refreshTrigger }: Props) {
         ) : (
           <span className="text-sm text-[var(--muted)] animate-pulse">Loading…</span>
         )}
+        </div>
       </div>
       <Link href="/leaderboard" className="inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-[var(--border)] transition-colors" aria-label="Leaderboard">
         📊

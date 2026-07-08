@@ -26,9 +26,9 @@ export default function Home() {
       <PointsHeader refreshTrigger={refreshTrigger} />
 
       <main className="flex-1 flex flex-col px-4 py-8 gap-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-[var(--foreground)]">Bus Tracker</h1>
-          <p className="text-[var(--muted)] text-sm">Track Dublin buses in real-time • Powered by NTA</p>
+        <div className="text-center space-y-3">
+          <h1 className="text-4xl font-bold text-[var(--foreground)]">GetThereIE</h1>
+          <p className="text-[var(--muted)] text-sm">Real-time tracking for buses and Luas • Powered by NTA</p>
         </div>
 
         <SearchFilter onPointsEarned={handlePointsEarned} />

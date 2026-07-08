@@ -2,8 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Bus Tracker Ireland",
-  description: "Real-time NTA bus tracking with gamification",
+  title: "GetThereIE - Real-time Bus & Luas Tracking",
+  description: "Track buses and Luas across Ireland in real-time. Compete on the leaderboard and earn points with GetThereIE.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export const viewport: Viewport = {
