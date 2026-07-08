@@ -84,25 +84,25 @@ export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEa
       {alert && (
         <PointsAlert points={alert.points} multiplier={alert.multiplier} onClose={dismissAlert} />
       )}
-      <div className="border border-gray-300 rounded-lg mb-4 overflow-hidden">
-        <div className="bg-gray-50 px-3 py-2 border-b border-gray-300 flex items-baseline gap-2">
-          <span className="font-bold text-sm text-blue-700 shrink-0">
+      <div className="card overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
+        <div className="bg-gradient-to-r from-[var(--primary)]/5 to-transparent px-4 py-3 border-b border-[var(--border)] flex items-center gap-3">
+          <span className="font-bold text-lg text-[var(--primary)] w-12 h-10 flex items-center justify-center bg-[var(--primary)]/10 rounded-lg">
             {buses[0]?.routeShortName || routeId}
           </span>
           {buses[0]?.headsign && (
-            <span className="text-sm text-gray-700">→ {buses[0].headsign}</span>
+            <span className="text-sm text-[var(--foreground)] font-medium truncate">→ {buses[0].headsign}</span>
           )}
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200 bg-white">
-                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Scheduled</th>
-                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Expected</th>
-                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Status</th>
-                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Fullness</th>
-                <th className="py-1.5 px-2 text-left text-xs font-semibold text-gray-500">Historical</th>
+              <tr className="border-b border-[var(--border)] bg-[var(--background)]">
+                <th className="py-2 px-3 text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Scheduled</th>
+                <th className="py-2 px-3 text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Expected</th>
+                <th className="py-2 px-3 text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Status</th>
+                <th className="py-2 px-3 text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Fullness</th>
+                <th className="py-2 px-3 text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Historical</th>
               </tr>
             </thead>
             <tbody>
@@ -111,7 +111,7 @@ export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEa
               ))}
               {buses.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-4 text-center text-sm text-gray-400">
+                  <td colSpan={5} className="py-6 text-center text-sm text-[var(--muted)]">
                     No buses found
                   </td>
                 </tr>
@@ -121,7 +121,7 @@ export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEa
         </div>
 
         {latestBus && (
-          <div className="px-3 py-3 bg-gray-50 border-t border-gray-200 flex flex-wrap gap-4">
+          <div className="px-4 py-3 bg-[var(--background)] border-t border-[var(--border)] flex flex-wrap gap-3">
             <ThumbButtons
               label="Stopped?"
               voted={votes.has(voteKey({ tripId: latestBus.tripId, type: "STOPPED" }))

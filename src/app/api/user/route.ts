@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+
+const dummyUsers: Record<string, { id: string; username: string; points: number }> = {};
 
 export async function POST(req: NextRequest) {
   const { username } = await req.json();
@@ -7,29 +8,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Username required" }, { status: 400 });
   }
 
-  try {
-    const user = await prisma.user.create({
-      data: { username: username.trim() },
-      select: { id: true, username: true, points: true },
-    });
-    return NextResponse.json(user);
-  } catch (err: unknown) {
-    if ((err as any)?.code === "P2002") {
-      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
-    }
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+  const trimmed = username.trim();
+  // Check if username already exists
+  if (Object.values(dummyUsers).some((u) => u.username === trimmed)) {
+    return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }
+
+  const id = `user_${Date.now()}`;
+  const user = { id, username: trimmed, points: 0 };
+  dummyUsers[id] = user;
+  return NextResponse.json(user);
 }
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: { id: true, username: true, points: true },
-  });
+  const user = dummyUsers[id];
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(user);
 }

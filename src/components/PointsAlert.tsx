@@ -15,16 +15,23 @@ export default function PointsAlert({ points, multiplier, onClose }: Props) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in">
       <div
-        className="bg-white rounded-2xl px-10 py-8 shadow-2xl text-center animate-bounce-once"
+        className="bg-[var(--card)] rounded-2xl px-8 py-6 shadow-2xl text-center animate-bounce-once cursor-pointer"
         onClick={onClose}
       >
-        <p className="text-lg font-semibold text-gray-800 mb-1">Alert</p>
+        <div className="text-4xl mb-3">✨</div>
         {multiplier ? (
-          <p className="text-2xl font-bold text-green-600">You {multiplier}x points!</p>
+          <>
+            <p className="text-sm text-[var(--muted)] mb-1">You earned</p>
+            <p className="text-3xl font-bold text-[var(--accent)]">{points} × {multiplier}</p>
+            <p className="text-sm text-[var(--muted)] mt-1">points!</p>
+          </>
         ) : (
-          <p className="text-2xl font-bold text-green-600">You earned {points} points!</p>
+          <>
+            <p className="text-sm text-[var(--muted)] mb-1">You earned</p>
+            <p className="text-3xl font-bold text-[var(--accent)]">{points} points</p>
+          </>
         )}
       </div>
     </div>

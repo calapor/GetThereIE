@@ -1,7 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBusesForStop } from "@/lib/nta";
 import { getStopName } from "@/lib/gtfs-db";
-import { prisma } from "@/lib/db";
+
+// Dummy buses data
+const dummyBuses = [
+  {
+    tripId: "trip_1",
+    routeId: "route_14",
+    routeShortName: "14",
+    headsign: "Tallaght",
+    delayMinutes: 2,
+    minutesAway: 3,
+    historicalStopPct: 65,
+  },
+  {
+    tripId: "trip_2",
+    routeId: "route_15",
+    routeShortName: "15",
+    headsign: "Ballymun",
+    delayMinutes: -1,
+    minutesAway: 8,
+    historicalStopPct: 72,
+  },
+  {
+    tripId: "trip_3",
+    routeId: "route_46a",
+    routeShortName: "46a",
+    headsign: "Dun Laoghaire",
+    delayMinutes: 4,
+    minutesAway: 12,
+    historicalStopPct: null,
+  },
+  {
+    tripId: "trip_4",
+    routeId: "route_11",
+    routeShortName: "11",
+    headsign: "Finglas",
+    delayMinutes: 0,
+    minutesAway: 18,
+    historicalStopPct: 68,
+  },
+];
 
 export async function GET(
   _req: NextRequest,
@@ -10,26 +48,9 @@ export async function GET(
   const { stopId } = await params;
 
   try {
-    const buses = await getBusesForStop(stopId);
-
-    // Enrich each bus with historical stopped % from past reports
-    const enriched = await Promise.all(
-      buses.map(async (bus) => {
-        const reports = await prisma.report.findMany({
-          where: { stopId, routeId: bus.routeId, type: "STOPPED" },
-        });
-        const historical =
-          reports.length === 0
-            ? null
-            : Math.round(
-                (reports.filter((r) => r.vote).length / reports.length) * 100
-              );
-        return { ...bus, historicalStopPct: historical };
-      })
-    );
-
+    // Return dummy buses for all stops
     const stopName = getStopName(stopId) ?? stopId;
-    return NextResponse.json({ stopId, stopName, fetchedAt: new Date().toISOString(), buses: enriched });
+    return NextResponse.json({ stopId, stopName, fetchedAt: new Date().toISOString(), buses: dummyBuses });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 502 });

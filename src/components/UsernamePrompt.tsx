@@ -28,25 +28,41 @@ export default function UsernamePrompt({ onDone }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-50 px-6">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2 text-center">Bus Tracker</h1>
-        <p className="text-sm text-gray-500 text-center mb-6">Choose a username to track points &amp; compete on the leaderboard</p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Your username"
-            maxLength={20}
-            className="border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-400"
-            autoFocus
-          />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[var(--background)] to-[var(--primary)]/5 px-6 animate-fade-in">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center space-y-3">
+          <img src="/logo.png" alt="GetThereIE" className="h-16 w-auto mx-auto" />
+          <div>
+            <h1 className="text-3xl font-bold text-[var(--foreground)]">GetThereIE</h1>
+            <p className="text-sm text-[var(--muted)] leading-relaxed mt-1">Track buses and Luas across Ireland</p>
+          </div>
+          <p className="text-sm text-[var(--muted)] leading-relaxed">Join the community and track your progress on the leaderboard</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Choose your username"
+              maxLength={20}
+              className="w-full border border-[var(--border)] bg-[var(--card)] rounded-lg px-4 py-3.5 text-base text-[var(--foreground)] placeholder-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all"
+              autoFocus
+            />
+            <p className="text-xs text-[var(--muted)]">{username.length}/20 characters</p>
+          </div>
+          
+          {error && (
+            <div className="p-3 bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 rounded-lg">
+              <p className="text-sm text-[var(--destructive)]">{error}</p>
+            </div>
+          )}
+          
           <button
             type="submit"
             disabled={loading || !username.trim()}
-            className="bg-blue-600 text-white rounded-lg py-3 font-semibold text-base disabled:opacity-50"
+            className="w-full bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-lg py-3.5 font-semibold text-base transition-colors disabled:opacity-60 disabled:cursor-not-allowed active:scale-95"
           >
             {loading ? "Setting up…" : "Get Started"}
           </button>
