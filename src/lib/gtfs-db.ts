@@ -40,6 +40,50 @@ export function getHeadsignForRoute(routeShortName: string, directionId: number)
   return row?.headsign ?? null;
 }
 
+// Origin/destination endpoints for a route, derived from the most common
+// headsign in each direction. Inbound (dir 1) headsign ≈ origin, outbound
+// (dir 0) headsign ≈ destination. Either may be null on one-directional routes.
+export function getRouteEndpoints(routeShortName: string): { origin: string | null; destination: string | null } {
+  return {
+    origin: getHeadsignForRoute(routeShortName, 1),
+    destination: getHeadsignForRoute(routeShortName, 0),
+  };
+}
+
+// The route short name serving a stop (used to tag Luas arrivals with "Red"/
+// "Green"). For Luas each stop belongs to exactly one line.
+export function getLineForStop(stopId: string): string | null {
+  const d = getDb();
+  if (!d) return null;
+  const row = d
+    .prepare(
+      `SELECT r.route_short_name AS name
+       FROM stop_times st
+       JOIN trips t  ON t.trip_id = st.trip_id
+       JOIN routes r ON r.route_id = t.route_id
+       WHERE st.stop_id = ? LIMIT 1`
+    )
+    .get(stopId) as { name: string } | undefined;
+  return row?.name ?? null;
+}
+
+// Ordered stops of a Luas line (direction 0), with the realtime abbreviation.
+export function getLuasLineStops(shortName: string): { stop_id: string; stop_name: string; abbrev: string | null }[] {
+  const d = getDb();
+  if (!d || !hasColumn(d, "stops", "abbrev")) return [];
+  return d
+    .prepare(
+      `SELECT s.stop_id, s.stop_name, s.abbrev
+       FROM stop_times st
+       JOIN stops s  ON s.stop_id = st.stop_id
+       JOIN trips t  ON t.trip_id = st.trip_id
+       JOIN routes r ON r.route_id = t.route_id
+       WHERE r.route_short_name = ? AND t.direction_id = 0
+       ORDER BY st.stop_sequence`
+    )
+    .all(shortName) as { stop_id: string; stop_name: string; abbrev: string | null }[];
+}
+
 export function getStopName(stopId: string): string | null {
   const d = getDb();
   if (!d) return null;
@@ -49,32 +93,52 @@ export function getStopName(stopId: string): string | null {
   return row?.stop_name ?? null;
 }
 
+export type Mode = "bus" | "luas";
+
 export interface StopResult {
   stop_id: string;
   stop_name: string;
   stop_lat: number | null;
   stop_lon: number | null;
+  mode?: Mode;
+  abbrev?: string | null;
 }
 
 export interface RouteResult {
   route_id: string;
   route_short_name: string;
   route_long_name: string;
+  mode?: Mode;
 }
 
 export interface NearbyStop extends StopResult {
   distanceMeters: number;
 }
 
-// Full-text stop search by name (Dublin Bus stops only), matching the existing
-// /api/stops/search behaviour but also returning coordinates.
+// Whether the Luas columns exist yet (added by scripts/add-luas.mjs). Memoised
+// per column so bus-only databases (no Luas import) keep working unchanged.
+const columnCache = new Map<string, boolean>();
+function hasColumn(d: BetterSqlite3.Database, table: string, col: string): boolean {
+  const key = `${table}.${col}`;
+  const cached = columnCache.get(key);
+  if (cached !== undefined) return cached;
+  const cols = d.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  const exists = cols.some((c) => c.name === col);
+  columnCache.set(key, exists);
+  return exists;
+}
+
+// Full-text stop search by name. Includes Luas stops when present.
 export function searchStops(q: string, limit = 20): StopResult[] {
   const d = getDb();
   if (!d || q.length < 2) return [];
+  const withMode = hasColumn(d, "stops", "mode");
+  const modeSel = withMode ? ", mode, abbrev" : "";
+  const luasFilter = withMode ? " OR mode = 'luas'" : "";
   return d
     .prepare(
-      `SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops
-       WHERE stop_id LIKE '%DB%' AND stop_name LIKE ?
+      `SELECT stop_id, stop_name, stop_lat, stop_lon${modeSel} FROM stops
+       WHERE (stop_id LIKE '%DB%'${luasFilter}) AND stop_name LIKE ?
        ORDER BY stop_name ASC LIMIT ?`
     )
     .all(`%${q}%`, limit) as StopResult[];
@@ -84,9 +148,10 @@ export function searchStops(q: string, limit = 20): StopResult[] {
 export function searchRoutes(q: string, limit = 20): RouteResult[] {
   const d = getDb();
   if (!d || q.length < 1) return [];
+  const modeSel = hasColumn(d, "routes", "mode") ? ", mode" : "";
   return d
     .prepare(
-      `SELECT route_id, route_short_name, route_long_name
+      `SELECT route_id, route_short_name, route_long_name${modeSel}
        FROM routes
        WHERE route_short_name LIKE ? OR route_long_name LIKE ?
        ORDER BY
@@ -345,17 +410,20 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-// Nearest Dublin Bus stops to a point. Uses a bounding-box SQL prefilter, then
+// Nearest bus + Luas stops to a point. Uses a bounding-box SQL prefilter, then
 // sorts by exact haversine distance in JS (no reliance on SQL trig functions).
 export function nearbyStops(lat: number, lon: number, limit = 20): NearbyStop[] {
   const d = getDb();
   if (!d) return [];
+  const withMode = hasColumn(d, "stops", "mode");
+  const modeSel = withMode ? ", mode, abbrev" : "";
+  const luasFilter = withMode ? " OR mode = 'luas'" : "";
   const latDelta = 0.02; // ~2.2 km north/south
   const lonDelta = 0.02 / Math.max(0.1, Math.cos((lat * Math.PI) / 180));
   const rows = d
     .prepare(
-      `SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops
-       WHERE stop_id LIKE '%DB%'
+      `SELECT stop_id, stop_name, stop_lat, stop_lon${modeSel} FROM stops
+       WHERE (stop_id LIKE '%DB%'${luasFilter})
          AND stop_lat BETWEEN ? AND ?
          AND stop_lon BETWEEN ? AND ?`
     )
@@ -369,4 +437,18 @@ export function nearbyStops(lat: number, lon: number, limit = 20): NearbyStop[] 
     }))
     .sort((a, b) => a.distanceMeters - b.distanceMeters)
     .slice(0, limit);
+}
+
+// Mode + realtime abbreviation for a stop, so the arrivals API can route Luas
+// stops to the Luas forecast source instead of the NTA feed.
+export function getStopInfo(stopId: string): { mode: Mode; abbrev: string | null; name: string | null } | null {
+  const d = getDb();
+  if (!d) return null;
+  const withMode = hasColumn(d, "stops", "mode");
+  const modeSel = withMode ? "mode, abbrev" : "'bus' AS mode, NULL AS abbrev";
+  const row = d
+    .prepare(`SELECT stop_name, ${modeSel} FROM stops WHERE stop_id = ? LIMIT 1`)
+    .get(stopId) as { stop_name: string; mode: Mode; abbrev: string | null } | undefined;
+  if (!row) return null;
+  return { mode: row.mode ?? "bus", abbrev: row.abbrev ?? null, name: row.stop_name ?? null };
 }

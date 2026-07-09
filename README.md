@@ -51,6 +51,22 @@ Additional operators can be layered in with `node scripts/add-operator.mjs <zip>
 
 `gtfs.db` is generated and git-ignored — it is not committed.
 
+### Luas (Red + Green lines)
+
+Luas is not in the NTA GTFS-R feed, so it uses the official RPA forecasting API
+for realtime and a small self-contained static import for stops/lines:
+
+```bash
+node scripts/add-luas.mjs   # no zip needed — fetches the Luas stop list live
+```
+
+This adds ~67 tram stops and the Red/Green lines to `gtfs.db`, tagged
+`mode = 'luas'` with the realtime abbreviation (`abbrev`) each stop uses on the
+Luas Forecast API. It also creates the `mode`/`abbrev`/`route_type` columns if
+they don't already exist, so it can run before or after the bus import (and even
+on its own — Luas works with no NTA key). Realtime lives in `src/lib/luas.ts`;
+the fetched mapping is cached to `scripts/luas-stop-codes.json`.
+
 ## API endpoints
 
 | Endpoint | Query params | Returns |

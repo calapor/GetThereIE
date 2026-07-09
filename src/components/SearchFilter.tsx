@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import StopBusBoard from "./StopBusBoard";
+import ModeIcon, { luasLineColour, type Mode } from "./ModeIcon";
 
 interface StopHit {
   stop_id?: string;
@@ -13,16 +15,41 @@ interface StopHit {
   lat?: number | null;
   lon?: number | null;
   distanceMeters?: number;
+  mode?: Mode;
 }
 
 interface RouteResult {
   route_id: string;
   route_short_name: string;
   route_long_name: string;
-  id: string;
-  name: string;
-  shortName: string;
-  headsign: string;
+  id?: string;
+  name?: string;
+  shortName?: string;
+  headsign?: string;
+  mode?: Mode;
+  endpoints?: { origin: string | null; destination: string | null };
+  liveCount?: number;
+}
+
+// "origin ⇄ destination" when both are known, else the best single label.
+function endpointsText(r: RouteResult): string {
+  const o = r.endpoints?.origin;
+  const d = r.endpoints?.destination;
+  if (o && d) return `${o} ⇄ ${d}`;
+  return d || o || r.headsign || r.route_long_name || "";
+}
+
+function LivePill({ count }: { count?: number }) {
+  const n = count ?? 0;
+  if (n > 0) {
+    return (
+      <span className="pill-live pill-live-active">
+        <span className="dot" />
+        {n} running now
+      </span>
+    );
+  }
+  return <span className="pill-live pill-live-idle">None running now</span>;
 }
 
 interface LiveTrip {
@@ -55,10 +82,6 @@ function saveRecent(stop: StopHit) {
   localStorage.setItem(RECENT_KEY, JSON.stringify([entry, ...prev].slice(0, 8)));
 }
 
-function fmtDistance(m: number): string {
-  return m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
-}
-
 export default function SearchFilter({ onPointsEarned }: Props) {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [stop, setStop] = useState<StopHit | null>(null);
@@ -67,9 +90,6 @@ export default function SearchFilter({ onPointsEarned }: Props) {
   // Discovery (nothing selected) state
   const [combined, setCombined] = useState<{ routes: RouteResult[]; stops: StopHit[] }>({ routes: [], stops: [] });
   const [recent, setRecent] = useState<StopHit[]>([]);
-  const [nearby, setNearby] = useState<StopHit[] | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [geoError, setGeoError] = useState<string | null>(null);
 
   // Route-selected state
   const [routeTab, setRouteTab] = useState<"stops" | "live">("stops");
@@ -162,23 +182,6 @@ export default function SearchFilter({ onPointsEarned }: Props) {
     setAvailableRoutes([]);
   }
 
-  function findNearby() {
-    if (!navigator.geolocation) { setGeoError("Location isn't available on this device."); return; }
-    setLocating(true);
-    setGeoError(null);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const res = await fetch(`/api/stops/nearby?lat=${latitude}&lon=${longitude}`);
-        const data: StopHit[] = await res.json().catch(() => []);
-        setNearby(data);
-        setLocating(false);
-      },
-      () => { setGeoError("Couldn't get your location."); setLocating(false); },
-      { enableHighAccuracy: true, timeout: 10_000 }
-    );
-  }
-
   // ---- Chip bar ---------------------------------------------------------
   const chips = (
     <div className="flex flex-wrap items-center gap-2 mb-6">
@@ -228,7 +231,7 @@ export default function SearchFilter({ onPointsEarned }: Props) {
           </div>
         )}
         <StopBusBoard
-          stopId={stop.stop_id}
+          stopId={stop.stop_id ?? stop.id ?? ""}
           routeFilter={route?.route_short_name}
           onPointsEarned={onPointsEarned}
           onRoutesAvailable={setAvailableRoutes}
@@ -396,16 +399,35 @@ export default function SearchFilter({ onPointsEarned }: Props) {
             <div>
               <p className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-3">Routes</p>
               <div className="flex flex-col gap-2">
-                {combined.routes.map((r) => (
-                  <button
-                    key={r.route_id}
-                    onClick={() => pickRoute(r)}
-                    className="card w-full text-left px-4 py-3.5 flex items-center gap-3 active:scale-95 transition-transform"
-                  >
-                    <span className="text-lg font-bold text-[var(--primary)] w-12 shrink-0 flex items-center justify-center bg-[var(--primary)]/10 rounded-lg">{r.route_short_name}</span>
-                    <span className="text-sm text-[var(--foreground)] truncate font-medium">{r.headsign}</span>
-                  </button>
-                ))}
+                {combined.routes.map((r) => {
+                  const mode = r.mode ?? "bus";
+                  const badgeColour = mode === "luas" ? luasLineColour(r.route_short_name) ?? "var(--primary)" : "var(--primary)";
+                  return (
+                    <button
+                      key={r.route_id}
+                      onClick={() => pickRoute(r)}
+                      className="card w-full text-left p-3 flex items-center gap-3 active:scale-95 transition-transform"
+                    >
+                      <ModeIcon mode={mode} shortName={r.route_short_name} className="shrink-0" />
+                      <span
+                        className="shrink-0 min-w-[2.5rem] text-center text-base font-extrabold"
+                        style={{ color: badgeColour }}
+                      >
+                        {r.route_short_name}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-[var(--foreground)] truncate">{endpointsText(r)}</div>
+                        <div className="mt-1.5">
+                          {mode === "luas" ? (
+                            <span className="pill-live pill-live-idle">Luas {r.route_short_name} Line</span>
+                          ) : (
+                            <LivePill count={r.liveCount} />
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -417,10 +439,13 @@ export default function SearchFilter({ onPointsEarned }: Props) {
                   <button
                     key={s.stop_id}
                     onClick={() => pickStop(s)}
-                    className="card text-left px-4 py-3.5 active:scale-95 transition-transform"
+                    className="card text-left px-4 py-3.5 flex items-center gap-3 active:scale-95 transition-transform"
                   >
-                    <span className="text-sm font-medium text-[var(--foreground)]">{s.name}</span>
-                    <span className="block text-xs text-[var(--muted)] mt-1">{s.id}</span>
+                    <ModeIcon mode={s.mode ?? "bus"} size={30} className="shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-[var(--foreground)] truncate">{s.name}</span>
+                      <span className="block text-xs text-[var(--muted)] mt-0.5">{s.id}</span>
+                    </span>
                   </button>
                 ))}
               </div>
@@ -431,52 +456,29 @@ export default function SearchFilter({ onPointsEarned }: Props) {
 
       {!showResults && q.length < 1 && (
         <div className="mt-4 flex flex-col gap-6">
-          <div>
-            <button
-              onClick={findNearby}
-              disabled={locating}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-medium py-3 rounded-lg active:bg-blue-700 disabled:opacity-60"
-            >
-              {locating ? "Locating…" : "📍 Stops near me"}
-            </button>
-            {geoError && <p className="text-xs text-red-500 mt-2">{geoError}</p>}
-          </div>
-
-          {nearby && nearby.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Nearest stops</p>
-              <div className="flex flex-col gap-2">
-                {nearby.map((s) => (
-                  <button
-                    key={s.stop_id}
-                    onClick={() => pickStop(s)}
-                    className="text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-baseline justify-between gap-2"
-                  >
-                    <span className="text-sm font-medium text-gray-900 truncate">{s.stop_name}</span>
-                    {s.distanceMeters != null && (
-                      <span className="text-xs text-gray-400 shrink-0">{fmtDistance(s.distanceMeters)}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {nearby && nearby.length === 0 && (
-            <p className="text-sm text-gray-400">No stops found near you.</p>
-          )}
+          <Link
+            href="/nearby"
+            className="w-full flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-semibold py-3 rounded-lg transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <path d="M12 21s-7-5.686-7-11a7 7 0 1 1 14 0c0 5.314-7 11-7 11Z" />
+              <circle cx="12" cy="10" r="2.5" />
+            </svg>
+            Stops near me
+          </Link>
 
           {recent.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Recent stops</p>
+              <p className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-3">Recent stops</p>
               <div className="flex flex-col gap-2">
                 {recent.map((s) => (
                   <button
                     key={s.stop_id}
                     onClick={() => pickStop(s)}
-                    className="text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 active:bg-gray-100"
+                    className="card text-left px-4 py-3.5 active:scale-95 transition-transform"
                   >
-                    <span className="text-sm font-medium text-gray-900">{s.stop_name}</span>
-                    <span className="block text-xs text-gray-400">{s.stop_id}</span>
+                    <span className="text-sm font-medium text-[var(--foreground)]">{s.stop_name}</span>
+                    <span className="block text-xs text-[var(--muted)] mt-1">{s.stop_id}</span>
                   </button>
                 ))}
               </div>

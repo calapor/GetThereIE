@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import BottomNav from "@/components/BottomNav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,8 +27,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`h-full scroll-smooth ${inter.variable}`}>
-      <body className="min-h-screen antialiased max-w-md mx-auto app-shell">
+      <body className="min-h-screen antialiased max-w-md mx-auto app-shell pb-20">
         {children}
+        <BottomNav />
         <div className="version-badge">{process.env.APP_VERSION ?? "dev"}</div>
       </body>
     </html>

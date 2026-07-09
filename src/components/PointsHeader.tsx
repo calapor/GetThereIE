@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { getStoredUser } from "@/lib/user";
 
 interface Props {
@@ -23,14 +22,13 @@ export default function PointsHeader({ refreshTrigger }: Props) {
   }, [refreshTrigger]);
 
   return (
-    <header className="sticky top-0 z-40 bg-[var(--card)] border-b border-[var(--border)] backdrop-blur-sm px-4 py-3 flex items-center justify-between shadow-sm">
-      <div className="flex items-center gap-2.5">
-        <img src="/logo.png" alt="GetThereIE" className="h-8 w-auto" />
-        <div className="flex flex-col gap-0.5">
+    <header className="app-header sticky top-0 z-40 border-b border-[var(--border)] backdrop-blur-sm px-4 py-3 flex items-center justify-between gap-3">
+      <img src="/logo-rect.png" alt="GetThereIE" className="h-20 w-auto shrink-0" />
+      <div className="flex flex-col items-end gap-0.5 text-right">
         {points !== null ? (
           <>
-            <div className="text-lg font-bold text-[var(--primary)]">
-              {points} <span className="text-sm font-semibold text-[var(--muted)]">points</span>
+            <div className="text-lg font-bold text-[var(--primary)] leading-none">
+              {points} <span className="text-sm font-semibold text-[var(--muted)]">pts</span>
             </div>
             {rank !== null && total !== null && (
               <div className="text-xs text-[var(--muted)]">
@@ -41,11 +39,7 @@ export default function PointsHeader({ refreshTrigger }: Props) {
         ) : (
           <span className="text-sm text-[var(--muted)] animate-pulse">Loading…</span>
         )}
-        </div>
       </div>
-      <Link href="/leaderboard" className="inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-[var(--border)] transition-colors" aria-label="Leaderboard">
-        📊
-      </Link>
     </header>
   );
 }
