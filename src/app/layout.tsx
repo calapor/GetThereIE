@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "GetThereIE - Real-time Bus & Luas Tracking",
@@ -18,9 +25,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full scroll-smooth">
-      <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] antialiased max-w-md mx-auto">
+    <html lang="en" className={`h-full scroll-smooth ${inter.variable}`}>
+      <body className="min-h-screen antialiased max-w-md mx-auto app-shell">
         {children}
+        <div className="version-badge">{process.env.APP_VERSION ?? "dev"}</div>
       </body>
     </html>
   );

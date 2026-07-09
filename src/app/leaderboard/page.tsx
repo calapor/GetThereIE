@@ -39,11 +39,11 @@ export default function LeaderboardPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <button onClick={() => router.back()} className="text-blue-600 text-sm font-medium">
+      <header className="sticky top-0 z-40 bg-[var(--card)]/90 backdrop-blur-sm border-b border-[var(--border)] px-4 py-3 flex items-center justify-between shadow-sm">
+        <button onClick={() => router.back()} className="text-[var(--primary)] text-sm font-semibold hover:text-[var(--primary-dark)] transition-colors">
           ← Back
         </button>
-        <div className="text-sm font-semibold text-blue-600">
+        <div className="text-sm font-semibold text-[var(--primary)]">
           {myPoints !== undefined && myRank !== null && total !== null ? (
             <>
               {myPoints} Points — {myRank}{ordinal(myRank)} out of {total}
@@ -53,8 +53,8 @@ export default function LeaderboardPage() {
         <div className="w-10" />
       </header>
 
-      <div className="px-4 py-4">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">Leaderboard</h2>
+      <div className="px-4 py-6">
+        <h2 className="text-2xl font-bold text-[var(--foreground)] mb-5">Leaderboard</h2>
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
