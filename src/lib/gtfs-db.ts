@@ -290,6 +290,28 @@ export function getUpcomingScheduledTripsForStop(
   const d = getDb();
   if (!d) return [];
   const nowSecs = irishNowSecs();
+
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Dublin' })
+    .format(new Date()).replace(/-/g, '');
+  const activeIds = getActiveServiceIds(today, dublinDayOfWeek());
+
+  if (activeIds !== null) {
+    if (activeIds.size === 0) return [];
+    const ids = [...activeIds];
+    const placeholders = ids.map(() => '?').join(',');
+    return d.prepare(`
+      SELECT st.trip_id AS tripId, r.route_id AS routeId,
+             r.route_short_name AS routeShortName, t.headsign,
+             t.direction_id AS directionId, st.arrival_secs AS arrivalSecs
+      FROM stop_times st
+      JOIN trips t ON t.trip_id = st.trip_id
+      JOIN routes r ON r.route_id = t.route_id
+      WHERE st.stop_id = ? AND st.arrival_secs >= ? AND st.arrival_secs < ?
+        AND t.service_id IN (${placeholders})
+      ORDER BY st.arrival_secs ASC LIMIT 50
+    `).all(stopId, nowSecs, nowSecs + windowSecs, ...ids) as ScheduledTrip[];
+  }
+
   return d.prepare(`
     SELECT st.trip_id AS tripId, r.route_id AS routeId,
            r.route_short_name AS routeShortName, t.headsign,
