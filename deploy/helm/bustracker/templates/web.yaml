@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bustracker.fullname" . }}-web
+  labels:
+    {{- include "bustracker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.web.replicas }}
+  # SQLite is a single-writer DB; only one pod should run at a time.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "bustracker.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        {{- include "bustracker.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      {{- include "bustracker.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.persistence.enabled }}
+      initContainers:
+        - name: migrate
+          image: {{ include "bustracker.webImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Run Prisma migrations against the SQLite DB before the app starts.
+          command: ["/bin/sh", "-c"]
+          args:
+            - 'DATABASE_URL="file:$(DATABASE_PATH)" node_modules/.bin/prisma migrate deploy'
+          env:
+            - name: DATABASE_PATH
+              value: {{ .Values.databasePath | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      {{- end }}
+      containers:
+        - name: web
+          image: {{ include "bustracker.webImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.web.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.web.port | quote }}
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: DATABASE_PATH
+              value: {{ .Values.databasePath | quote }}
+            - name: GTFS_DB_PATH
+              value: {{ .Values.gtfsDbPath | quote }}
+            - name: TZ
+              value: Europe/Dublin
+            {{- if .Values.ntaApiKey }}
+            - name: NTA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bustracker.fullname" . }}-secrets
+                  key: nta-api-key
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /api/healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "bustracker.fullname" . }}-data
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bustracker.fullname" . }}-web
+  labels:
+    {{- include "bustracker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "bustracker.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

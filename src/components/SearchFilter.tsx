@@ -61,6 +61,8 @@ export default function SearchFilter({ onPointsEarned }: Props) {
   const [routeStops, setRouteStops] = useState<StopHit[]>([]);
   const [liveTrips, setLiveTrips] = useState<LiveTrip[] | null>(null);
   const [liveLoading, setLiveLoading] = useState(false);
+  const [directions, setDirections] = useState<{ directionId: number; headsign: string }[]>([]);
+  const [selectedDirection, setSelectedDirection] = useState<number | null>(null);
 
   // Stop-selected state — routes currently arriving, for narrowing pills
   const [availableRoutes, setAvailableRoutes] = useState<string[]>([]);
@@ -83,18 +85,30 @@ export default function SearchFilter({ onPointsEarned }: Props) {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, route, stop]);
 
+  // Fetch directions when a route is selected
+  useEffect(() => {
+    if (!route || stop) return;
+    setDirections([]);
+    setSelectedDirection(null);
+    fetch(`/api/routes/directions?routeId=${encodeURIComponent(route.route_id)}`)
+      .then((r) => r.json())
+      .then(setDirections)
+      .catch(() => {});
+  }, [route?.route_id, stop]);
+
   // Stops on the selected route (route state, "stops" tab)
   useEffect(() => {
     if (!route || stop) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const q = query.trim();
+    const dirParam = selectedDirection !== null ? `&direction=${selectedDirection}` : "";
     debounceRef.current = setTimeout(async () => {
-      const res = await fetch(`/api/routes/stops?routeId=${encodeURIComponent(route.route_id)}&q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/routes/stops?routeId=${encodeURIComponent(route.route_id)}&q=${encodeURIComponent(q)}${dirParam}`);
       const data: StopHit[] = await res.json().catch(() => []);
       setRouteStops(data);
     }, 200);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [route, stop, query]);
+  }, [route, stop, query, selectedDirection]);
 
   // Live overview for the selected route
   const loadLive = useCallback(async (shortName: string) => {
@@ -118,6 +132,8 @@ export default function SearchFilter({ onPointsEarned }: Props) {
     setCombined({ routes: [], stops: [] });
     setRouteTab("stops");
     setLiveTrips(null);
+    setDirections([]);
+    setSelectedDirection(null);
   }
 
   function pickStop(s: StopHit) {
@@ -210,6 +226,34 @@ export default function SearchFilter({ onPointsEarned }: Props) {
     return (
       <div>
         {chips}
+        {directions.length >= 2 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              onClick={() => setSelectedDirection(null)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                selectedDirection === null
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "border-gray-300 text-gray-600 hover:border-gray-400"
+              }`}
+            >
+              Both directions
+            </button>
+            {directions.map((dir) => (
+              <button
+                key={dir.directionId}
+                onClick={() => setSelectedDirection(dir.directionId)}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                  selectedDirection === dir.directionId
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "border-gray-300 text-gray-600 hover:border-gray-400"
+                }`}
+              >
+                → {dir.headsign}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-1 mb-3 bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => setRouteTab("stops")}
@@ -258,7 +302,7 @@ export default function SearchFilter({ onPointsEarned }: Props) {
                 <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-            {liveTrips?.map((t) => (
+            {liveTrips?.filter((t) => selectedDirection === null || t.directionId === selectedDirection).map((t) => (
               <button
                 key={t.tripId}
                 onClick={() => pickStop({ stop_id: t.nextStopId, stop_name: t.nextStopName })}

@@ -6,6 +6,7 @@ interface BusRowData {
   isStopping: boolean;
   occupancyStatus: string | null;
   historicalStopPct: number | null;
+  isScheduled?: boolean;
 }
 
 interface Props {
@@ -42,13 +43,17 @@ export default function BusRow({ bus }: Props) {
   const isEarly = bus.delayMinutes < -1;
   const onTime = !isLate && !isEarly;
 
-  const delayLabel = onTime
+  const delayLabel = bus.isScheduled
+    ? "Scheduled"
+    : onTime
     ? "On time"
     : isLate
     ? `+${bus.delayMinutes} min late`
     : `${Math.abs(bus.delayMinutes)} min early`;
 
-  const delayColor = onTime ? "text-green-600" : isLate ? "text-red-500" : "text-yellow-600";
+  const delayColor = bus.isScheduled
+    ? "text-gray-400"
+    : onTime ? "text-green-600" : isLate ? "text-red-500" : "text-yellow-600";
 
   return (
     <tr className="border-b border-gray-100 last:border-0">

@@ -1,0 +1,43 @@
+# BusTracker Helm values.
+# Targets the in-cluster Pi registry; override image fields when using GHCR.
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  registry: 192.168.1.101:30500
+  repository: bustracker
+  tag: latest
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+web:
+  replicas: 1
+  port: 3000
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: "1", memory: 512Mi }
+
+# Paths inside the container for the two SQLite databases.
+# Both land on the PVC mounted at /data.
+databasePath: /data/dev.db
+gtfsDbPath: /data/gtfs.db
+
+# PersistentVolumeClaim for SQLite data (dev.db + gtfs.db).
+# k3s ships local-path provisioner by default; change storageClass for other clusters.
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 2Gi
+  accessMode: ReadWriteOnce
+
+ingress:
+  enabled: true
+  className: traefik
+  host: ""
+  annotations: {}
+  tls: []
+
+# NTA GTFS-RT API key (https://developer.nationaltransport.ie).
+# Leave empty to fetch the public feed without a key (may be rate-limited).
+ntaApiKey: ""

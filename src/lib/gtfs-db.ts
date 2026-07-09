@@ -6,7 +6,7 @@ let db: BetterSqlite3.Database | null = null;
 
 function getDb(): BetterSqlite3.Database | null {
   if (db !== null) return db;
-  const dbPath = path.join(process.cwd(), "gtfs.db");
+  const dbPath = process.env.GTFS_DB_PATH ?? path.join(process.cwd(), "gtfs.db");
   if (!existsSync(dbPath)) return null;
   db = new BetterSqlite3(dbPath, { readonly: true });
   return db;
@@ -97,22 +97,99 @@ export function searchRoutes(q: string, limit = 20): RouteResult[] {
     .all(`${q}%`, `%${q}%`, `${q}%`, limit) as RouteResult[];
 }
 
-// Distinct stops served by a route, optionally filtered by name.
-export function getStopsForRoute(routeId: string, q = "", limit = 50): StopResult[] {
+// Distinct stops served by a route, optionally filtered by name and/or direction.
+// Uses the longest trip per direction as the canonical stop ordering so stops
+// appear in route sequence rather than alphabetically.
+// direction = -1 means both directions.
+export function getStopsForRoute(routeId: string, q = "", limit = 300, direction = -1): StopResult[] {
   const d = getDb();
   if (!d || !routeId) return [];
   return d
     .prepare(
-      `SELECT DISTINCT st.stop_id, s.stop_name, s.stop_lat, s.stop_lon
+      `WITH rep AS (
+         SELECT t.trip_id, t.direction_id,
+                ROW_NUMBER() OVER (
+                  PARTITION BY t.direction_id
+                  ORDER BY COUNT(st2.stop_id) DESC, t.trip_id
+                ) AS rn
+         FROM trips t
+         JOIN stop_times st2 ON st2.trip_id = t.trip_id
+         WHERE t.route_id = ?
+         GROUP BY t.trip_id, t.direction_id
+       )
+       SELECT st.stop_id, s.stop_name, s.stop_lat, s.stop_lon
        FROM stop_times st
        JOIN stops s ON s.stop_id = st.stop_id
-       JOIN trips t ON t.trip_id = st.trip_id
-       WHERE t.route_id = ?
-         AND (? = '' OR s.stop_name LIKE ?)
-       ORDER BY s.stop_name ASC
+       JOIN rep ON rep.trip_id = st.trip_id AND rep.rn = 1
+       WHERE (? = '' OR s.stop_name LIKE ?)
+         AND (? = -1 OR rep.direction_id = ?)
+       ORDER BY rep.direction_id, st.stop_sequence
        LIMIT ?`
     )
-    .all(routeId, q, `%${q}%`, limit) as StopResult[];
+    .all(routeId, q, `%${q}%`, direction, direction, limit) as StopResult[];
+}
+
+export interface RouteDirection {
+  directionId: number;
+  headsign: string;
+}
+
+export interface ScheduledArrival {
+  tripId: string;
+  routeId: string;
+  routeShortName: string;
+  headsign: string;
+  directionId: number;
+  arrivalSecs: number;
+}
+
+// Returns upcoming scheduled arrivals at a stop from the static GTFS timetable.
+// fromSecs is seconds-from-midnight in Dublin local time.
+// windowSecs controls the lookahead window (default 90 min).
+export function getScheduledArrivalsForStop(
+  stopId: string,
+  fromSecs: number,
+  windowSecs = 5400
+): ScheduledArrival[] {
+  const d = getDb();
+  if (!d) return [];
+  return d
+    .prepare(
+      `SELECT st.trip_id      AS tripId,
+              t.route_id      AS routeId,
+              r.route_short_name AS routeShortName,
+              t.headsign,
+              t.direction_id  AS directionId,
+              st.arrival_secs AS arrivalSecs
+       FROM stop_times st
+       JOIN trips t  ON t.trip_id  = st.trip_id
+       JOIN routes r ON r.route_id = t.route_id
+       WHERE st.stop_id = ?
+         AND st.arrival_secs >= ?
+         AND st.arrival_secs <  ?
+       ORDER BY st.arrival_secs ASC
+       LIMIT 20`
+    )
+    .all(stopId, fromSecs, fromSecs + windowSecs) as ScheduledArrival[];
+}
+
+// Returns the distinct directions for a route with their most common headsign.
+export function getRouteDirections(routeId: string): RouteDirection[] {
+  const d = getDb();
+  if (!d || !routeId) return [];
+  return d
+    .prepare(
+      `SELECT direction_id as directionId,
+              (SELECT t2.headsign FROM trips t2
+               WHERE t2.route_id = t.route_id AND t2.direction_id = t.direction_id
+                 AND t2.headsign != ''
+               GROUP BY t2.headsign ORDER BY COUNT(*) DESC LIMIT 1) as headsign
+       FROM trips t
+       WHERE t.route_id = ?
+       GROUP BY t.direction_id
+       ORDER BY t.direction_id`
+    )
+    .all(routeId) as RouteDirection[];
 }
 
 export function getStopCoords(stopId: string): { lat: number; lon: number } | null {
