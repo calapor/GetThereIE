@@ -1,0 +1,6 @@
+apiVersion: v2
+name: bustracker
+description: Dublin Bus gamified tracker — Next.js + SQLite.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

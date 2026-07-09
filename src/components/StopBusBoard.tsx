@@ -16,6 +16,7 @@ interface BusData {
   isStopping: boolean;
   occupancyStatus: string | null;
   historicalStopPct: number | null;
+  isScheduled?: boolean;
 }
 
 interface Props {

@@ -1,5 +1,5 @@
 import { transit_realtime } from "gtfs-realtime-bindings";
-import { getScheduledArrivalSecs, getHeadsignForRoute, getStopName } from "./gtfs-db";
+import { getScheduledArrivalSecs, getHeadsignForRoute, getStopName, getScheduledArrivalsForStop } from "./gtfs-db";
 import fs from "fs";
 import path from "path";
 
@@ -26,6 +26,7 @@ export interface BusArrival {
   isStopping: boolean;
   occupancyStatus: string | null;
   stopId: string;
+  isScheduled: boolean;
 }
 
 async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
@@ -37,14 +38,16 @@ async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
   }
 
   // 2. Disk cache: survives across Next.js worker restarts / hot-reloads
+  let stale: transit_realtime.FeedMessage | null = null;
   try {
     const meta = JSON.parse(fs.readFileSync(FEED_CACHE_META_PATH, "utf8")) as { fetchedAt: number };
+    const data = fs.readFileSync(FEED_CACHE_PATH);
+    const feed = transit_realtime.FeedMessage.decode(new Uint8Array(data));
     if (now - meta.fetchedAt < FEED_CACHE_TTL_MS) {
-      const data = fs.readFileSync(FEED_CACHE_PATH);
-      const feed = transit_realtime.FeedMessage.decode(new Uint8Array(data));
       memCache = { feed, fetchedAt: meta.fetchedAt };
       return feed;
     }
+    stale = feed; // keep as fallback in case the live fetch fails
   } catch {
     // no cache on disk yet, or corrupt — fall through to fetch
   }
@@ -56,6 +59,9 @@ async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
     next: { revalidate: 0 },
   });
   if (!res.ok) {
+    // On rate-limit or transient error, serve stale data rather than blowing up.
+    if (stale) return stale;
+    if (memCache) return memCache.feed;
     const body = await res.text().catch(() => "");
     throw new Error(`NTA API ${res.status}: ${body}`);
   }
@@ -76,12 +82,21 @@ async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
 }
 
 function todayYYYYMMDD(): string {
-  const d = new Date();
-  return (
-    String(d.getFullYear()) +
-    String(d.getMonth() + 1).padStart(2, "0") +
-    String(d.getDate()).padStart(2, "0")
-  );
+  // sv-SE locale gives YYYY-MM-DD in Dublin time, strip dashes → YYYYMMDD.
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Dublin" })
+    .format(new Date())
+    .replace(/-/g, "");
+}
+
+// Seconds elapsed since midnight in Dublin local time.
+function dublinSecsSinceMidnight(): number {
+  const parts = new Intl.DateTimeFormat("en-IE", {
+    timeZone: "Europe/Dublin",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (t: string) => parseInt(parts.find((p) => p.type === t)!.value);
+  return get("hour") * 3600 + get("minute") * 60 + get("second");
 }
 
 // Converts a GTFS scheduled arrival (seconds from midnight, local time) to a
@@ -166,9 +181,51 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
         isStopping: !isSkipped,
         occupancyStatus: null,
         stopId,
+        isScheduled: false,
       });
       break;
     }
+  }
+
+  // Supplement with static schedule for any slot not already covered by the RT feed.
+  const rtTripIds = new Set(upcoming.map((b) => b.tripId));
+  const nowSecs = dublinSecsSinceMidnight();
+  const today = todayYYYYMMDD();
+  const fmt = (ts: number) => {
+    const d = new Date(ts * 1000);
+    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  };
+
+  // Key: routeId + arrivalSecs — deduplicates calendar variants (weekday/weekend
+  // trips that share the same route and scheduled time but have different trip IDs).
+  const scheduledKeys = new Set(
+    upcoming.filter((b) => !b.isScheduled).map((b) => `${b.routeId}:${b.scheduledTime}`)
+  );
+
+  for (const s of getScheduledArrivalsForStop(stopId, nowSecs)) {
+    if (rtTripIds.has(s.tripId)) continue;
+    const arrivalTimestamp = scheduledToUnix(s.arrivalSecs, today);
+    if (arrivalTimestamp <= now) continue;
+    const key = `${s.routeId}:${fmt(arrivalTimestamp)}`;
+    if (scheduledKeys.has(key)) continue;
+    scheduledKeys.add(key);
+    upcoming.push({
+      tripId: s.tripId,
+      routeId: s.routeId,
+      routeShortName: s.routeShortName,
+      headsign: s.headsign,
+      directionId: s.directionId,
+      arrivalTimestamp,
+      arrivalTime: fmt(arrivalTimestamp),
+      scheduledTime: fmt(arrivalTimestamp),
+      minutesAway: Math.max(0, Math.floor((arrivalTimestamp - now) / 60)),
+      delaySeconds: 0,
+      delayMinutes: 0,
+      isStopping: true,
+      occupancyStatus: null,
+      stopId,
+      isScheduled: true,
+    });
   }
 
   upcoming.sort((a, b) => a.arrivalTimestamp - b.arrivalTimestamp);

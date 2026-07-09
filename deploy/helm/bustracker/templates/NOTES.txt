@@ -1,0 +1,38 @@
+BusTracker deployed successfully.
+
+=== IMPORTANT: Seed the GTFS database ===
+
+The app reads stop/route/trip data from a SQLite database (gtfs.db) on the PVC.
+It is NOT seeded automatically. After the first deploy, run:
+
+  # 1. Copy a GTFS_Dublin_Bus.zip into the pod and import it
+  kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "bustracker.fullname" . }}-web -- \
+    sh -c "cd /app && node scripts/import-gtfs.mjs /data/gtfs.zip"
+
+  # Or, copy an existing gtfs.db directly:
+  kubectl cp gtfs.db {{ .Release.Namespace }}/$(kubectl get pod -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "bustracker.name" . }} -o jsonpath='{.items[0].metadata.name}'):/data/gtfs.db
+
+NTA rotates trip IDs periodically — re-import the GTFS zip whenever live ETAs
+stop matching (typically every few weeks).
+
+=== Access ===
+
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.host }}
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}
+{{- else }}
+  Ingress host not set. Set ingress.host in values.yaml or via --set ingress.host=<hostname>.
+{{- end }}
+{{- else }}
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "bustracker.fullname" . }}-web 3000:80
+  Then open http://localhost:3000
+{{- end }}
+
+=== NTA API Key ===
+
+{{- if .Values.ntaApiKey }}
+  NTA_API_KEY is configured.
+{{- else }}
+  NTA_API_KEY is not set — the public feed is used (may be rate-limited).
+  Set it with: --set ntaApiKey=<your-key>
+{{- end }}
