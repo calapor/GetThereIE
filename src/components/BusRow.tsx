@@ -66,19 +66,23 @@ export default function BusRow({ bus }: Props) {
 
       {/* Real-time ETA */}
       <td className="py-3 px-3">
-        <div>
-          <span className={`text-sm font-bold ${onTime ? "text-[var(--foreground)]" : delayColorClass}`}>
-            {bus.arrivalTime}
-          </span>
-          {bus.minutesAway <= 60 && (
-            <span className="block text-xs text-[var(--muted)] font-medium mt-0.5">{formatCountdown(bus.minutesAway)}</span>
-          )}
-        </div>
+        {bus.isScheduled ? (
+          <span className="text-sm text-[var(--muted)] italic">Sched.</span>
+        ) : (
+          <div>
+            <span className={`text-sm font-bold ${onTime ? "text-[var(--foreground)]" : delayColorClass}`}>
+              {bus.arrivalTime}
+            </span>
+            {bus.minutesAway <= 60 && (
+              <span className="block text-xs text-[var(--muted)] font-medium mt-0.5">{formatCountdown(bus.minutesAway)}</span>
+            )}
+          </div>
+        )}
       </td>
 
       {/* Delay */}
       <td className={`py-3 px-3 text-xs font-semibold ${delayColorClass}`}>
-        {delayLabel}
+        {bus.isScheduled ? <span className="text-[var(--muted)]">—</span> : delayLabel}
       </td>
 
       {/* Occupancy */}
