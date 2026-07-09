@@ -143,6 +143,42 @@ export interface ScheduledArrival {
   arrivalSecs: number;
 }
 
+// Returns the set of service_ids active on a given date (YYYYMMDD) and day-of-week (0=Sun).
+// Returns null if the calendar tables don't exist yet (pre-import).
+function getActiveServiceIds(today: string, dayOfWeek: number): Set<string> | null {
+  const d = getDb();
+  if (!d) return null;
+  const hasCalendar = d.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='calendar'").get();
+  if (!hasCalendar) return null;
+
+  const dayCol = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][dayOfWeek];
+
+  const base = (d.prepare(
+    `SELECT service_id FROM calendar
+     WHERE start_date <= ? AND end_date >= ? AND ${dayCol} = 1`
+  ).all(today, today) as { service_id: string }[]).map(r => r.service_id);
+
+  const added = (d.prepare(
+    `SELECT service_id FROM calendar_dates WHERE date = ? AND exception_type = 1`
+  ).all(today) as { service_id: string }[]).map(r => r.service_id);
+
+  const removedRows = d.prepare(
+    `SELECT service_id FROM calendar_dates WHERE date = ? AND exception_type = 2`
+  ).all(today) as { service_id: string }[];
+  const removed = new Set(removedRows.map(r => r.service_id));
+
+  return new Set([...base, ...added].filter(id => !removed.has(id)));
+}
+
+// Returns 0=Sun, 1=Mon … 6=Sat in Dublin local time.
+function dublinDayOfWeek(): number {
+  const name = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Dublin',
+    weekday: 'long',
+  }).format(new Date());
+  return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(name);
+}
+
 // Returns upcoming scheduled arrivals at a stop from the static GTFS timetable.
 // fromSecs is seconds-from-midnight in Dublin local time.
 // windowSecs controls the lookahead window (default 90 min).
@@ -153,6 +189,39 @@ export function getScheduledArrivalsForStop(
 ): ScheduledArrival[] {
   const d = getDb();
   if (!d) return [];
+
+  // Build today's YYYYMMDD string in Dublin time
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Dublin' })
+    .format(new Date()).replace(/-/g, '');
+  const activeIds = getActiveServiceIds(today, dublinDayOfWeek());
+
+  if (activeIds !== null) {
+    // Calendar tables exist — filter to today's services only
+    if (activeIds.size === 0) return [];
+    const ids = [...activeIds];
+    const placeholders = ids.map(() => '?').join(',');
+    return d
+      .prepare(
+        `SELECT st.trip_id      AS tripId,
+                t.route_id      AS routeId,
+                r.route_short_name AS routeShortName,
+                t.headsign,
+                t.direction_id  AS directionId,
+                st.arrival_secs AS arrivalSecs
+         FROM stop_times st
+         JOIN trips t  ON t.trip_id  = st.trip_id
+         JOIN routes r ON r.route_id = t.route_id
+         WHERE st.stop_id = ?
+           AND st.arrival_secs >= ?
+           AND st.arrival_secs <  ?
+           AND t.service_id IN (${placeholders})
+         ORDER BY st.arrival_secs ASC
+         LIMIT 20`
+      )
+      .all(stopId, fromSecs, fromSecs + windowSecs, ...ids) as ScheduledArrival[];
+  }
+
+  // No calendar tables yet — fall back to unfiltered (original behaviour)
   return d
     .prepare(
       `SELECT st.trip_id      AS tripId,
@@ -190,6 +259,47 @@ export function getRouteDirections(routeId: string): RouteDirection[] {
        ORDER BY t.direction_id`
     )
     .all(routeId) as RouteDirection[];
+}
+
+function irishNowSecs(): number {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-IE', {
+    timeZone: 'Europe/Dublin',
+    hour: 'numeric', minute: 'numeric', second: 'numeric',
+    hour12: false,
+  }).formatToParts(now);
+  const h = parseInt(parts.find(p => p.type === 'hour')!.value);
+  const m = parseInt(parts.find(p => p.type === 'minute')!.value);
+  const s = parseInt(parts.find(p => p.type === 'second')!.value);
+  return h * 3600 + m * 60 + s;
+}
+
+export interface ScheduledTrip {
+  tripId: string;
+  routeId: string;
+  routeShortName: string;
+  headsign: string;
+  directionId: number;
+  arrivalSecs: number;
+}
+
+export function getUpcomingScheduledTripsForStop(
+  stopId: string,
+  windowSecs = 7200
+): ScheduledTrip[] {
+  const d = getDb();
+  if (!d) return [];
+  const nowSecs = irishNowSecs();
+  return d.prepare(`
+    SELECT st.trip_id AS tripId, r.route_id AS routeId,
+           r.route_short_name AS routeShortName, t.headsign,
+           t.direction_id AS directionId, st.arrival_secs AS arrivalSecs
+    FROM stop_times st
+    JOIN trips t ON t.trip_id = st.trip_id
+    JOIN routes r ON r.route_id = t.route_id
+    WHERE st.stop_id = ? AND st.arrival_secs >= ? AND st.arrival_secs < ?
+    ORDER BY st.arrival_secs ASC LIMIT 50
+  `).all(stopId, nowSecs, nowSecs + windowSecs) as ScheduledTrip[];
 }
 
 export function getStopCoords(stopId: string): { lat: number; lon: number } | null {

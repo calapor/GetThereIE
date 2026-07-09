@@ -25,6 +25,7 @@ export interface BusArrival {
   delayMinutes: number;
   isStopping: boolean;
   occupancyStatus: string | null;
+  historicalStopPct: number | null;
   stopId: string;
   isScheduled: boolean;
 }
@@ -110,6 +111,11 @@ function scheduledToUnix(arrivalSecs: number, startDate: string): number {
   return midnightLocal + arrivalSecs;
 }
 
+function fmtTime(ts: number): string {
+  const d = new Date(ts * 1000);
+  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+}
+
 export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
   const feed = await fetchFeed();
   const now = Math.floor(Date.now() / 1000);
@@ -151,12 +157,8 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
       if (eta <= now) break;
 
       const minutesAway = Math.max(0, Math.floor((eta - now) / 60));
-      const fmt = (ts: number) => {
-        const d = new Date(ts * 1000);
-        return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-      };
-      const arrivalTime = fmt(eta);
-      const scheduledTime = fmt(scheduledUnix);
+      const arrivalTime = fmtTime(eta);
+      const scheduledTime = fmtTime(scheduledUnix);
 
       const trip = tu.trip;
       const routeId = trip?.routeId || trip?.tripId?.split("_")[0] || "unknown";
@@ -180,6 +182,7 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
         delayMinutes: Math.round(delay / 60),
         isStopping: !isSkipped,
         occupancyStatus: null,
+        historicalStopPct: null,
         stopId,
         isScheduled: false,
       });
@@ -223,6 +226,7 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
       delayMinutes: 0,
       isStopping: true,
       occupancyStatus: null,
+      historicalStopPct: null,
       stopId,
       isScheduled: true,
     });
