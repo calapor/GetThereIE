@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import BusRow from "./BusRow";
 import ThumbButtons from "./ThumbButtons";
 import PointsAlert from "./PointsAlert";
+import ModeIcon, { luasLineColour } from "./ModeIcon";
 import { getStoredUser, updateStoredPoints } from "@/lib/user";
 
 interface BusData {
@@ -45,6 +46,11 @@ export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEa
   const [alert, setAlert] = useState<AlertState | null>(null);
 
   const latestBus = buses[0];
+  const shortName = buses[0]?.routeShortName || routeId;
+  const luasColour = luasLineColour(shortName);
+  const mode = luasColour ? "luas" : "bus";
+  const badgeColour = luasColour ?? "var(--primary)";
+  const badgeBg = luasColour ? `${luasColour}1a` : "var(--primary-tint)";
 
   function voteKey({ tripId, type }: VoteKey) {
     return `${tripId}:${type}`;
@@ -87,8 +93,12 @@ export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEa
       )}
       <div className="card overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
         <div className="bg-gradient-to-r from-[var(--primary)]/5 to-transparent px-4 py-3 border-b border-[var(--border)] flex items-center gap-3">
-          <span className="font-bold text-lg text-[var(--primary)] w-12 h-10 flex items-center justify-center bg-[var(--primary)]/10 rounded-lg">
-            {buses[0]?.routeShortName || routeId}
+          <ModeIcon mode={mode} shortName={shortName} size={30} className="shrink-0" />
+          <span
+            className="font-bold text-lg w-12 h-10 flex items-center justify-center rounded-lg"
+            style={{ color: badgeColour, background: badgeBg }}
+          >
+            {shortName || routeId}
           </span>
           {buses[0]?.headsign && (
             <span className="text-sm text-[var(--foreground)] font-medium truncate">→ {buses[0].headsign}</span>

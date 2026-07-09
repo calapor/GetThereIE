@@ -143,6 +143,80 @@ button:focus-visible {
 }
 input:focus { outline: none; }
 
+/* App header — brand strip with a subtle wash behind the logo */
+.app-header {
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0)),
+    var(--card);
+}
+
+/* Bottom tab bar — fixed to the bottom of the centered mobile column */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 28rem; /* matches max-w-md app column */
+  z-index: 50;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 12px -6px rgba(16, 24, 40, 0.12);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1875rem;
+  padding: 0.5rem 0 0.5625rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.bottom-nav-tab:hover { color: var(--foreground); }
+
+.bottom-nav-tab.is-active {
+  color: var(--primary);
+}
+
+.bottom-nav-tab.is-active svg {
+  stroke-width: 2.4;
+}
+
+/* Live-count pill on route results */
+.pill-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.pill-live-active { background: rgba(5, 150, 105, 0.12); color: var(--accent); }
+.pill-live-idle { background: var(--primary-tint); color: var(--muted); }
+.pill-live .dot {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+.pill-live-active .dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 /* Version badge (fixed, non-interactive) */
 .version-badge {
   position: fixed;

@@ -236,6 +236,48 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
   return upcoming;
 }
 
+// Count of active trips per route short name, from the already-cached feed
+// (no extra NTA calls). A trip counts as "running now" if it still has at least
+// one stop-time update in the future. Returns { "74": 3, "15": 5, … }.
+export async function getActiveCountsByRoute(): Promise<Record<string, number>> {
+  const feed = await fetchFeed();
+  const now = Math.floor(Date.now() / 1000);
+  const counts: Record<string, number> = {};
+
+  for (const entity of feed.entity) {
+    const tu = entity.tripUpdate;
+    if (!tu) continue;
+
+    const trip = tu.trip;
+    const routeId = trip?.routeId || trip?.tripId?.split("_")[0] || "";
+    // RT routeId is like "1 74" or "1 15B c a" — second token is the short name.
+    const shortName = routeId.split(" ")[1] || routeId;
+    if (!shortName) continue;
+
+    const tripId = trip?.tripId || entity.id;
+    const startDate = (trip as any)?.startDate || todayYYYYMMDD();
+
+    let active = false;
+    for (const stu of tu.stopTimeUpdate ?? []) {
+      const arrival = stu.arrival ?? stu.departure;
+      const rtTime = Number(arrival?.time ?? 0);
+      if (rtTime > 0) {
+        if (rtTime > now) { active = true; break; }
+        continue;
+      }
+      const arrivalSecs = stu.stopId ? getScheduledArrivalSecs(tripId, stu.stopId) : null;
+      if (arrivalSecs !== null) {
+        const eta = scheduledToUnix(arrivalSecs, startDate) + Number(arrival?.delay ?? 0);
+        if (eta > now) { active = true; break; }
+      }
+    }
+
+    if (active) counts[shortName] = (counts[shortName] ?? 0) + 1;
+  }
+
+  return counts;
+}
+
 export interface LiveTrip {
   tripId: string;
   routeShortName: string;

@@ -1,0 +1,471 @@
+[
+  {
+    "line": "Red",
+    "abbrev": "TPT",
+    "name": "The Point",
+    "lat": 53.34835,
+    "lon": -6.22925833333333
+  },
+  {
+    "line": "Red",
+    "abbrev": "SDK",
+    "name": "Spencer Dock",
+    "lat": 53.3488222222222,
+    "lon": -6.23714722222222
+  },
+  {
+    "line": "Red",
+    "abbrev": "MYS",
+    "name": "Mayor Square - NCI",
+    "lat": 53.3492472222222,
+    "lon": -6.24339444444444
+  },
+  {
+    "line": "Red",
+    "abbrev": "GDK",
+    "name": "George's Dock",
+    "lat": 53.349528,
+    "lon": -6.247575
+  },
+  {
+    "line": "Red",
+    "abbrev": "CON",
+    "name": "Connolly",
+    "lat": 53.3509222222222,
+    "lon": -6.24994166666667
+  },
+  {
+    "line": "Red",
+    "abbrev": "BUS",
+    "name": "Busáras",
+    "lat": 53.350075,
+    "lon": -6.25145
+  },
+  {
+    "line": "Red",
+    "abbrev": "ABB",
+    "name": "Abbey Street",
+    "lat": 53.3485888888889,
+    "lon": -6.25817222222222
+  },
+  {
+    "line": "Red",
+    "abbrev": "JER",
+    "name": "Jervis",
+    "lat": 53.3476861111111,
+    "lon": -6.26533333333333
+  },
+  {
+    "line": "Red",
+    "abbrev": "FOU",
+    "name": "Four Courts",
+    "lat": 53.3468638888889,
+    "lon": -6.27343611111111
+  },
+  {
+    "line": "Red",
+    "abbrev": "SMI",
+    "name": "Smithfield",
+    "lat": 53.3471333333333,
+    "lon": -6.27772777777778
+  },
+  {
+    "line": "Red",
+    "abbrev": "MUS",
+    "name": "Museum",
+    "lat": 53.3478666666667,
+    "lon": -6.28671388888889
+  },
+  {
+    "line": "Red",
+    "abbrev": "HEU",
+    "name": "Heuston",
+    "lat": 53.3466472222222,
+    "lon": -6.29180833333333
+  },
+  {
+    "line": "Red",
+    "abbrev": "JAM",
+    "name": "James's",
+    "lat": 53.3419416666667,
+    "lon": -6.29336111111111
+  },
+  {
+    "line": "Red",
+    "abbrev": "FAT",
+    "name": "Fatima",
+    "lat": 53.3384388888889,
+    "lon": -6.29254722222222
+  },
+  {
+    "line": "Red",
+    "abbrev": "RIA",
+    "name": "Rialto",
+    "lat": 53.3379083333333,
+    "lon": -6.29724166666667
+  },
+  {
+    "line": "Red",
+    "abbrev": "SUI",
+    "name": "Suir Road",
+    "lat": 53.3366166666667,
+    "lon": -6.30721111111111
+  },
+  {
+    "line": "Red",
+    "abbrev": "GOL",
+    "name": "Goldenbridge",
+    "lat": 53.3358916666667,
+    "lon": -6.31356944444444
+  },
+  {
+    "line": "Red",
+    "abbrev": "DRI",
+    "name": "Drimnagh",
+    "lat": 53.3353611111111,
+    "lon": -6.31816111111111
+  },
+  {
+    "line": "Red",
+    "abbrev": "BLA",
+    "name": "Blackhorse",
+    "lat": 53.3342583333333,
+    "lon": -6.32739444444444
+  },
+  {
+    "line": "Red",
+    "abbrev": "BLU",
+    "name": "Bluebell",
+    "lat": 53.3292972222222,
+    "lon": -6.33379166666667
+  },
+  {
+    "line": "Red",
+    "abbrev": "KYL",
+    "name": "Kylemore",
+    "lat": 53.3266555555556,
+    "lon": -6.34344444444444
+  },
+  {
+    "line": "Red",
+    "abbrev": "RED",
+    "name": "Red Cow",
+    "lat": 53.3168333333333,
+    "lon": -6.36987222222222
+  },
+  {
+    "line": "Red",
+    "abbrev": "KIN",
+    "name": "Kingswood",
+    "lat": 53.3036944444444,
+    "lon": -6.36525
+  },
+  {
+    "line": "Red",
+    "abbrev": "BEL",
+    "name": "Belgard",
+    "lat": 53.2992861111111,
+    "lon": -6.37488611111111
+  },
+  {
+    "line": "Red",
+    "abbrev": "COO",
+    "name": "Cookstown",
+    "lat": 53.2935055555556,
+    "lon": -6.38439722222222
+  },
+  {
+    "line": "Red",
+    "abbrev": "HOS",
+    "name": "Hospital",
+    "lat": 53.2893694444444,
+    "lon": -6.37885
+  },
+  {
+    "line": "Red",
+    "abbrev": "TAL",
+    "name": "Tallaght",
+    "lat": 53.2874944444444,
+    "lon": -6.37458888888889
+  },
+  {
+    "line": "Red",
+    "abbrev": "FET",
+    "name": "Fettercairn",
+    "lat": 53.29351885,
+    "lon": -6.395553516667
+  },
+  {
+    "line": "Red",
+    "abbrev": "CVN",
+    "name": "Cheeverstown",
+    "lat": 53.290982416667,
+    "lon": -6.4068485
+  },
+  {
+    "line": "Red",
+    "abbrev": "CIT",
+    "name": "Citywest Campus",
+    "lat": 53.28783255,
+    "lon": -6.418914583333
+  },
+  {
+    "line": "Red",
+    "abbrev": "FOR",
+    "name": "Fortunestown",
+    "lat": 53.284250633333,
+    "lon": -6.42460165
+  },
+  {
+    "line": "Red",
+    "abbrev": "SAG",
+    "name": "Saggart",
+    "lat": 53.28467885,
+    "lon": -6.43776255
+  },
+  {
+    "line": "Green",
+    "abbrev": "BRO",
+    "name": "Broombridge",
+    "lat": 53.37223956,
+    "lon": -6.29768465
+  },
+  {
+    "line": "Green",
+    "abbrev": "CAB",
+    "name": "Cabra",
+    "lat": 53.36433419,
+    "lon": -6.28196899
+  },
+  {
+    "line": "Green",
+    "abbrev": "PHI",
+    "name": "Phibsborough",
+    "lat": 53.36037646,
+    "lon": -6.27888498
+  },
+  {
+    "line": "Green",
+    "abbrev": "GRA",
+    "name": "Grangegorman",
+    "lat": 53.35719205,
+    "lon": -6.27733848
+  },
+  {
+    "line": "Green",
+    "abbrev": "BRD",
+    "name": "Broadstone - University",
+    "lat": 53.35407442,
+    "lon": -6.27375642
+  },
+  {
+    "line": "Green",
+    "abbrev": "DOM",
+    "name": "Dominick",
+    "lat": 53.3513492,
+    "lon": -6.26554234
+  },
+  {
+    "line": "Green",
+    "abbrev": "PAR",
+    "name": "Parnell",
+    "lat": 53.35310356,
+    "lon": -6.26050153
+  },
+  {
+    "line": "Green",
+    "abbrev": "OUP",
+    "name": "O'Connell - Upper",
+    "lat": 53.35161218,
+    "lon": -6.26102943
+  },
+  {
+    "line": "Green",
+    "abbrev": "OGP",
+    "name": "O'Connell - GPO",
+    "lat": 53.34884509,
+    "lon": -6.25988168
+  },
+  {
+    "line": "Green",
+    "abbrev": "MAR",
+    "name": "Marlborough",
+    "lat": 53.34924219,
+    "lon": -6.25773649
+  },
+  {
+    "line": "Green",
+    "abbrev": "WES",
+    "name": "Westmoreland",
+    "lat": 53.34635626,
+    "lon": -6.25897083
+  },
+  {
+    "line": "Green",
+    "abbrev": "TRY",
+    "name": "Trinity",
+    "lat": 53.34528172,
+    "lon": -6.25825674
+  },
+  {
+    "line": "Green",
+    "abbrev": "DAW",
+    "name": "Dawson",
+    "lat": 53.34216927,
+    "lon": -6.25796366
+  },
+  {
+    "line": "Green",
+    "abbrev": "STS",
+    "name": "St. Stephen's Green",
+    "lat": 53.3390722222222,
+    "lon": -6.26133333333333
+  },
+  {
+    "line": "Green",
+    "abbrev": "HAR",
+    "name": "Harcourt",
+    "lat": 53.3333583333333,
+    "lon": -6.26265
+  },
+  {
+    "line": "Green",
+    "abbrev": "CHA",
+    "name": "Charlemont",
+    "lat": 53.3306694444444,
+    "lon": -6.25868333333333
+  },
+  {
+    "line": "Green",
+    "abbrev": "RAN",
+    "name": "Ranelagh",
+    "lat": 53.3264333333333,
+    "lon": -6.25620277777778
+  },
+  {
+    "line": "Green",
+    "abbrev": "BEE",
+    "name": "Beechwood",
+    "lat": 53.3208222222222,
+    "lon": -6.25465277777778
+  },
+  {
+    "line": "Green",
+    "abbrev": "COW",
+    "name": "Cowper",
+    "lat": 53.3164666666667,
+    "lon": -6.25344722222222
+  },
+  {
+    "line": "Green",
+    "abbrev": "MIL",
+    "name": "Milltown",
+    "lat": 53.3099166666667,
+    "lon": -6.25172777777778
+  },
+  {
+    "line": "Green",
+    "abbrev": "WIN",
+    "name": "Windy Arbour",
+    "lat": 53.3015583333333,
+    "lon": -6.25070833333333
+  },
+  {
+    "line": "Green",
+    "abbrev": "DUN",
+    "name": "Dundrum",
+    "lat": 53.2923583333333,
+    "lon": -6.24511666666667
+  },
+  {
+    "line": "Green",
+    "abbrev": "BAL",
+    "name": "Balally",
+    "lat": 53.2861055555556,
+    "lon": -6.23677222222222
+  },
+  {
+    "line": "Green",
+    "abbrev": "KIL",
+    "name": "Kilmacud",
+    "lat": 53.2830083333333,
+    "lon": -6.22388611111111
+  },
+  {
+    "line": "Green",
+    "abbrev": "STI",
+    "name": "Stillorgan",
+    "lat": 53.2793111111111,
+    "lon": -6.20991944444444
+  },
+  {
+    "line": "Green",
+    "abbrev": "SAN",
+    "name": "Sandyford",
+    "lat": 53.2776027777778,
+    "lon": -6.20467777777778
+  },
+  {
+    "line": "Green",
+    "abbrev": "CPK",
+    "name": "Central Park",
+    "lat": 53.27015,
+    "lon": -6.20376388888889
+  },
+  {
+    "line": "Green",
+    "abbrev": "GLE",
+    "name": "Glencairn",
+    "lat": 53.2663361111111,
+    "lon": -6.20994166666667
+  },
+  {
+    "line": "Green",
+    "abbrev": "GAL",
+    "name": "The Gallops",
+    "lat": 53.2611638888889,
+    "lon": -6.20602222222222
+  },
+  {
+    "line": "Green",
+    "abbrev": "LEO",
+    "name": "Leopardstown Valley",
+    "lat": 53.2582472222222,
+    "lon": -6.19836111111111
+  },
+  {
+    "line": "Green",
+    "abbrev": "BAW",
+    "name": "Ballyogan Wood",
+    "lat": 53.255047,
+    "lon": -6.184475
+  },
+  {
+    "line": "Green",
+    "abbrev": "CCK",
+    "name": "Carrickmines",
+    "lat": 53.2540333333333,
+    "lon": -6.16990833333333
+  },
+  {
+    "line": "Green",
+    "abbrev": "LAU",
+    "name": "Laughanstown",
+    "lat": 53.2506055555556,
+    "lon": -6.15500555555556
+  },
+  {
+    "line": "Green",
+    "abbrev": "CHE",
+    "name": "Cherrywood",
+    "lat": 53.2453333333333,
+    "lon": -6.14585277777778
+  },
+  {
+    "line": "Green",
+    "abbrev": "BRI",
+    "name": "Brides Glen",
+    "lat": 53.242075,
+    "lon": -6.14288611111111
+  }
+]

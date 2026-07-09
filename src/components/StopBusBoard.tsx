@@ -2,12 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import RouteCard from "./RouteCard";
+import LuasBoard from "./LuasBoard";
+import { LUAS_BOARD_STYLE } from "@/lib/config";
 
 interface BusData {
   tripId: string;
   routeId: string;
   routeShortName: string;
   headsign: string;
+  directionId?: number;
   stopId: string;
   arrivalTime: string;
   scheduledTime: string;
@@ -36,6 +39,7 @@ const REFRESH_INTERVAL = 30_000;
 export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hideHeader, onRoutesAvailable }: Props) {
   const [buses, setBuses] = useState<BusData[]>([]);
   const [stopName, setStopName] = useState<string>(stopId);
+  const [mode, setMode] = useState<"bus" | "luas">("bus");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
@@ -46,6 +50,7 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       setBuses(data.buses ?? []);
+      if (data.mode) setMode(data.mode);
       if (data.stopName) setStopName(data.stopName);
       setLastFetch(new Date());
       setError(null);
@@ -132,19 +137,25 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
         </div>
       )}
       <div className="space-y-3">
-        {Object.entries(byRoute).map(([routeId, routeBuses]) => (
-          <RouteCard
-            key={routeId}
-            routeId={routeId}
-            stopId={stopId}
-            stopName={stopName}
-            buses={routeBuses}
-            onPointsEarned={onPointsEarned}
-          />
-        ))}
+        {mode === "luas" && LUAS_BOARD_STYLE === "dedicated" && visibleBuses.length > 0 ? (
+          <LuasBoard line={visibleBuses[0].routeShortName} buses={visibleBuses} />
+        ) : (
+          Object.entries(byRoute).map(([routeId, routeBuses]) => (
+            <RouteCard
+              key={routeId}
+              routeId={routeId}
+              stopId={stopId}
+              stopName={stopName}
+              buses={routeBuses}
+              onPointsEarned={onPointsEarned}
+            />
+          ))
+        )}
         {Object.keys(byRoute).length === 0 && (
           <div className="text-center py-12">
-            <p className="text-[var(--muted)] text-sm">No upcoming buses at this stop</p>
+            <p className="text-[var(--muted)] text-sm">
+              No upcoming {mode === "luas" ? "trams" : "buses"} at this stop
+            </p>
           </div>
         )}
       </div>
