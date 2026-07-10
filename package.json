@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "import-gtfs": "node scripts/import-gtfs.mjs",
+    "refresh-gtfs": "node scripts/refresh-gtfs.mjs",
     "postinstall": "node scripts/setup.mjs"
   },
   "dependencies": {
