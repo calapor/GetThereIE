@@ -20,11 +20,15 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = NORMAL');
 
-// Ensure all tables exist
+// Ensure all tables exist (schemas match the primary import pipeline)
 db.exec(`
   CREATE TABLE IF NOT EXISTS stops (
     stop_id   TEXT PRIMARY KEY,
-    stop_name TEXT NOT NULL
+    stop_name TEXT NOT NULL,
+    stop_lat  REAL,
+    stop_lon  REAL,
+    mode      TEXT NOT NULL DEFAULT 'bus',
+    abbrev    TEXT
   );
   CREATE TABLE IF NOT EXISTS stop_times (
     trip_id       TEXT    NOT NULL,
@@ -37,14 +41,28 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS routes (
     route_id         TEXT PRIMARY KEY,
     route_short_name TEXT NOT NULL,
-    route_long_name  TEXT NOT NULL DEFAULT ''
+    route_long_name  TEXT NOT NULL DEFAULT '',
+    mode             TEXT NOT NULL DEFAULT 'bus'
   );
   CREATE TABLE IF NOT EXISTS trips (
-    trip_id  TEXT PRIMARY KEY,
-    route_id TEXT NOT NULL
+    trip_id      TEXT PRIMARY KEY,
+    route_id     TEXT NOT NULL,
+    headsign     TEXT NOT NULL DEFAULT '',
+    direction_id INTEGER NOT NULL DEFAULT 0
   );
   CREATE INDEX IF NOT EXISTS idx_trips_route ON trips(route_id);
 `);
+
+// Add columns that may be missing from older DBs
+function ensureColumn(table, col, decl) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
+  if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${decl}`);
+}
+ensureColumn('stops', 'stop_lat', 'stop_lat REAL');
+ensureColumn('stops', 'stop_lon', 'stop_lon REAL');
+ensureColumn('stops', 'mode', "mode TEXT NOT NULL DEFAULT 'bus'");
+ensureColumn('stops', 'abbrev', 'abbrev TEXT');
+ensureColumn('routes', 'mode', "mode TEXT NOT NULL DEFAULT 'bus'");
 
 function timeToSecs(t) {
   const [h, m, s] = t.split(':');
@@ -74,12 +92,21 @@ function streamCsv(filename, onRow) {
 
 // --- stops ---
 console.log('Importing stops.txt...');
-const insertStop = db.prepare('INSERT OR IGNORE INTO stops (stop_id, stop_name) VALUES (?, ?)');
+const insertStop = db.prepare(
+  'INSERT OR IGNORE INTO stops (stop_id, stop_name, stop_lat, stop_lon) VALUES (?, ?, ?, ?)'
+);
 const insertStopsBatch = db.transaction((rows) => { for (const r of rows) insertStop.run(r); });
 const stopsBuf = [];
 await streamCsv('stops.txt', (row) => {
-  if (!row.stop_id?.includes('DB')) return;
-  stopsBuf.push([row.stop_id, row.stop_name ?? '']);
+  if (!row.stop_id) return;
+  const lat = parseFloat(row.stop_lat);
+  const lon = parseFloat(row.stop_lon);
+  stopsBuf.push([
+    row.stop_id,
+    row.stop_name ?? '',
+    Number.isFinite(lat) ? lat : null,
+    Number.isFinite(lon) ? lon : null,
+  ]);
 });
 insertStopsBatch(stopsBuf);
 
@@ -118,7 +145,7 @@ const insertStBatch = db.transaction((rows) => { for (const r of rows) insertSt.
 let stBuf = [];
 let stTotal = 0;
 await streamCsv('stop_times.txt', (row) => {
-  if (!row.stop_id?.includes('DB')) return;
+  if (!row.stop_id || !row.trip_id) return;
   stBuf.push([row.trip_id, row.stop_id, timeToSecs(row.arrival_time), parseInt(row.stop_sequence)]);
   if (stBuf.length >= 10_000) {
     insertStBatch(stBuf);

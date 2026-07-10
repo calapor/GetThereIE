@@ -138,7 +138,7 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
       )}
       <div className="space-y-3">
         {mode === "luas" && LUAS_BOARD_STYLE === "dedicated" && visibleBuses.length > 0 ? (
-          <LuasBoard line={visibleBuses[0].routeShortName} buses={visibleBuses} />
+          <LuasBoard line={visibleBuses[0].routeShortName} buses={visibleBuses} fetchedAt={lastFetch ?? new Date()} />
         ) : (
           Object.entries(byRoute).map(([routeId, routeBuses]) => (
             <RouteCard

@@ -191,7 +191,7 @@ export default function SearchFilter({ onPointsEarned }: Props) {
           className="inline-flex items-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white text-sm font-semibold pl-3 pr-2.5 py-2 rounded-full transition-colors animate-slide-up"
         >
           {route.route_short_name}
-          <span className="text-[var(--primary-dark)] text-lg leading-none">✕</span>
+          <span className="text-white/60 text-lg leading-none">✕</span>
         </button>
       )}
       {stop && (
