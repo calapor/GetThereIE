@@ -6,7 +6,7 @@ ENV PNPM_CONFIG_CONFIRM_MODULES_PURGE=false
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@11.1.1 --activate
 # better-sqlite3 and @prisma/engines require native compilation tools.
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ unzip && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 FROM base AS deps
@@ -22,6 +22,7 @@ ENV NODE_OPTIONS=--max-old-space-size=2048
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm exec prisma generate
 RUN pnpm run build
+RUN node scripts/refresh-gtfs.mjs
 
 # Production-only deps with a hoisted (flat, symlink-free) node_modules layout
 # so Docker COPY works correctly without pulling in pnpm's .pnpm virtual store.
@@ -47,6 +48,8 @@ WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 # Pre-built Next.js output
 COPY --from=build /app/.next ./.next
+# GTFS static schedule database (imported fresh during build)
+COPY --from=build /app/gtfs.db ./gtfs.db
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./
 # Prisma schema + migrations (for the init container that runs migrate deploy)
