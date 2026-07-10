@@ -1,14 +1,20 @@
 import BetterSqlite3 from "better-sqlite3";
-import { existsSync } from "fs";
+import { existsSync, statSync } from "fs";
 import path from "path";
 
 let db: BetterSqlite3.Database | null = null;
+let dbInode: number | null = null;
 
 function getDb(): BetterSqlite3.Database | null {
-  if (db !== null) return db;
   const dbPath = process.env.GTFS_DB_PATH ?? path.join(process.cwd(), "gtfs.db");
   if (!existsSync(dbPath)) return null;
+  const inode = statSync(dbPath).ino;
+  if (db !== null && inode === dbInode) return db;
+  // File was replaced (e.g. after refresh-gtfs); reopen.
+  db?.close();
   db = new BetterSqlite3(dbPath, { readonly: true });
+  dbInode = inode;
+  columnCache.clear();
   return db;
 }
 
@@ -115,13 +121,24 @@ export interface NearbyStop extends StopResult {
   distanceMeters: number;
 }
 
-// Whether the Luas columns exist yet (added by scripts/add-luas.mjs). Memoised
-// per column so bus-only databases (no Luas import) keep working unchanged.
+// Memoised schema checks — cleared on DB reopen so a mid-flight rebuild is safe.
 const columnCache = new Map<string, boolean>();
+function hasTable(d: BetterSqlite3.Database, table: string): boolean {
+  const key = `__table__.${table}`;
+  const cached = columnCache.get(key);
+  if (cached !== undefined) return cached;
+  const row = d
+    .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?")
+    .get(table);
+  const exists = row != null;
+  columnCache.set(key, exists);
+  return exists;
+}
 function hasColumn(d: BetterSqlite3.Database, table: string, col: string): boolean {
   const key = `${table}.${col}`;
   const cached = columnCache.get(key);
   if (cached !== undefined) return cached;
+  if (!hasTable(d, table)) { columnCache.set(key, false); return false; }
   const cols = d.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
   const exists = cols.some((c) => c.name === col);
   columnCache.set(key, exists);
@@ -133,12 +150,16 @@ export function searchStops(q: string, limit = 20): StopResult[] {
   const d = getDb();
   if (!d || q.length < 2) return [];
   const withMode = hasColumn(d, "stops", "mode");
+  const withLatLon = hasColumn(d, "stops", "stop_lat");
   const modeSel = withMode ? ", mode, abbrev" : "";
-  const luasFilter = withMode ? " OR mode = 'luas'" : "";
+  const latLonSel = withLatLon ? ", stop_lat, stop_lon" : "";
+  // When mode column exists, include all bus/luas stops regardless of stop_id format.
+  // Fall back to the legacy DB-prefix heuristic if the column isn't present yet.
+  const stopFilter = withMode ? "mode IN ('bus', 'luas')" : "stop_id LIKE '%DB%'";
   return d
     .prepare(
-      `SELECT stop_id, stop_name, stop_lat, stop_lon${modeSel} FROM stops
-       WHERE (stop_id LIKE '%DB%'${luasFilter}) AND stop_name LIKE ?
+      `SELECT stop_id, stop_name${latLonSel}${modeSel} FROM stops
+       WHERE ${stopFilter} AND stop_name LIKE ?
        ORDER BY stop_name ASC LIMIT ?`
     )
     .all(`%${q}%`, limit) as StopResult[];
@@ -147,7 +168,7 @@ export function searchStops(q: string, limit = 20): StopResult[] {
 // Route search by short name (prefix-prioritised) or long name.
 export function searchRoutes(q: string, limit = 20): RouteResult[] {
   const d = getDb();
-  if (!d || q.length < 1) return [];
+  if (!d || q.length < 1 || !hasTable(d, "routes")) return [];
   const modeSel = hasColumn(d, "routes", "mode") ? ", mode" : "";
   return d
     .prepare(
@@ -168,7 +189,8 @@ export function searchRoutes(q: string, limit = 20): RouteResult[] {
 // direction = -1 means both directions.
 export function getStopsForRoute(routeId: string, q = "", limit = 300, direction = -1): StopResult[] {
   const d = getDb();
-  if (!d || !routeId) return [];
+  if (!d || !routeId || !hasTable(d, "routes")) return [];
+  const latLonSel = hasColumn(d, "stops", "stop_lat") ? ", s.stop_lat, s.stop_lon" : "";
   return d
     .prepare(
       `WITH rep AS (
@@ -182,7 +204,7 @@ export function getStopsForRoute(routeId: string, q = "", limit = 300, direction
          WHERE t.route_id = ?
          GROUP BY t.trip_id, t.direction_id
        )
-       SELECT st.stop_id, s.stop_name, s.stop_lat, s.stop_lon
+       SELECT st.stop_id, s.stop_name${latLonSel}
        FROM stop_times st
        JOIN stops s ON s.stop_id = st.stop_id
        JOIN rep ON rep.trip_id = st.trip_id AND rep.rn = 1
@@ -391,7 +413,7 @@ export function getUpcomingScheduledTripsForStop(
 
 export function getStopCoords(stopId: string): { lat: number; lon: number } | null {
   const d = getDb();
-  if (!d) return null;
+  if (!d || !hasColumn(d, "stops", "stop_lat")) return null;
   const row = d
     .prepare("SELECT stop_lat, stop_lon FROM stops WHERE stop_id = ? LIMIT 1")
     .get(stopId) as { stop_lat: number | null; stop_lon: number | null } | undefined;
@@ -414,16 +436,16 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
 // sorts by exact haversine distance in JS (no reliance on SQL trig functions).
 export function nearbyStops(lat: number, lon: number, limit = 20): NearbyStop[] {
   const d = getDb();
-  if (!d) return [];
+  if (!d || !hasColumn(d, "stops", "stop_lat")) return [];
   const withMode = hasColumn(d, "stops", "mode");
   const modeSel = withMode ? ", mode, abbrev" : "";
-  const luasFilter = withMode ? " OR mode = 'luas'" : "";
+  const stopFilter = withMode ? "mode IN ('bus', 'luas')" : "stop_id LIKE '%DB%'";
   const latDelta = 0.02; // ~2.2 km north/south
   const lonDelta = 0.02 / Math.max(0.1, Math.cos((lat * Math.PI) / 180));
   const rows = d
     .prepare(
       `SELECT stop_id, stop_name, stop_lat, stop_lon${modeSel} FROM stops
-       WHERE (stop_id LIKE '%DB%'${luasFilter})
+       WHERE ${stopFilter}
          AND stop_lat BETWEEN ? AND ?
          AND stop_lon BETWEEN ? AND ?`
     )

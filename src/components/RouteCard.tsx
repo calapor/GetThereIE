@@ -132,7 +132,7 @@ export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEa
         </div>
 
         {latestBus && (
-          <div className="px-4 py-3 bg-[var(--background)] border-t border-[var(--border)] flex flex-wrap gap-3">
+          <div className="px-4 py-3 bg-[var(--background)] border-t border-[var(--border)] flex items-center gap-4">
             <ThumbButtons
               label="Stopped?"
               voted={votes.has(voteKey({ tripId: latestBus.tripId, type: "STOPPED" }))
@@ -141,7 +141,7 @@ export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEa
               onVote={(v) => handleVote(latestBus.tripId, "STOPPED", v)}
             />
             <ThumbButtons
-              label="Arrived on time?"
+              label="On time?"
               voted={votes.has(voteKey({ tripId: latestBus.tripId, type: "ON_TIME" }))
                 ? votes.get(voteKey({ tripId: latestBus.tripId, type: "ON_TIME" }))!
                 : null}

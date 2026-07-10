@@ -32,10 +32,7 @@ export default function UsernamePrompt({ onDone }: Props) {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-3">
           <img src="/logo.png" alt="GetThereIE" className="h-16 w-auto mx-auto" />
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--foreground)]">GetThereIE</h1>
-            <p className="text-sm text-[var(--muted)] leading-relaxed mt-1">Track buses and Luas across Ireland</p>
-          </div>
+          <p className="text-sm text-[var(--muted)] leading-relaxed mt-1">Track buses and Luas across Ireland</p>
           <p className="text-sm text-[var(--muted)] leading-relaxed">Join the community and track your progress on the leaderboard</p>
         </div>
         

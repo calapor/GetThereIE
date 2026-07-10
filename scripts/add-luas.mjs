@@ -105,6 +105,8 @@ function ensureColumn(table, col, decl) {
   const cols = db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
   if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${decl}`);
 }
+ensureColumn('stops', 'stop_lat', 'stop_lat REAL');
+ensureColumn('stops', 'stop_lon', 'stop_lon REAL');
 ensureColumn('stops', 'mode', "mode TEXT NOT NULL DEFAULT 'bus'");
 ensureColumn('stops', 'abbrev', 'abbrev TEXT');
 ensureColumn('routes', 'mode', "mode TEXT NOT NULL DEFAULT 'bus'");

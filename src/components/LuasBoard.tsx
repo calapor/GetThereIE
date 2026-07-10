@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { luasLineColour } from "./ModeIcon";
 
 interface BusData {
@@ -13,19 +14,38 @@ interface BusData {
 interface Props {
   line: string; // "Red" | "Green"
   buses: BusData[];
+  fetchedAt: Date;
 }
 
-function DueLabel({ minutes }: { minutes: number }) {
-  return (
-    <span className="text-sm font-bold tabular-nums">
-      {minutes === 0 ? "DUE" : `${minutes} min`}
-    </span>
-  );
+function DueLabel({ minutes, fetchedAt }: { minutes: number; fetchedAt: Date }) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (minutes > 3) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [minutes]);
+
+  if (minutes === 0) {
+    return <span className="text-sm font-bold tabular-nums">DUE</span>;
+  }
+
+  if (minutes <= 3) {
+    const secsLeft = Math.max(0, minutes * 60 - Math.floor((now - fetchedAt.getTime()) / 1000));
+    return (
+      <span className="text-right leading-tight">
+        <span className="block text-sm font-bold tabular-nums">{minutes} min</span>
+        <span className="block text-xs tabular-nums opacity-60">{secsLeft}s</span>
+      </span>
+    );
+  }
+
+  return <span className="text-sm font-bold tabular-nums">{minutes} min</span>;
 }
 
 // Dedicated Luas board styled like a platform sign: two direction columns with
 // the destination and due-time for each tram. directionId 1 = Inbound, 0 = Outbound.
-export default function LuasBoard({ line, buses }: Props) {
+export default function LuasBoard({ line, buses, fetchedAt }: Props) {
   const colour = luasLineColour(line) ?? "var(--primary)";
   const inbound = buses.filter((b) => b.directionId === 1);
   const outbound = buses.filter((b) => b.directionId === 0);
@@ -46,7 +66,7 @@ export default function LuasBoard({ line, buses }: Props) {
           <div key={t.tripId} className="flex items-center justify-between gap-2 px-3 py-2.5">
             <span className="text-sm text-[var(--foreground)] truncate">{t.headsign}</span>
             <span className="shrink-0" style={{ color: colour }}>
-              <DueLabel minutes={t.minutesAway} />
+              <DueLabel minutes={t.minutesAway} fetchedAt={fetchedAt} />
             </span>
           </div>
         ))}
