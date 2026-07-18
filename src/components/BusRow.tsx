@@ -19,6 +19,7 @@ function formatCountdown(minutesAway: number): string {
   return "";
 }
 
+// TODO(ai-predict): show predicted fullness (weather/traffic model) — see docs/ai-predictions.md
 function formatOccupancy(status: string | null): string {
   if (!status) return "—";
   const map: Record<string, string> = {
@@ -33,6 +34,7 @@ function formatOccupancy(status: string | null): string {
   return map[status] ?? "—";
 }
 
+// TODO(ai-predict): show predicted lateness (historical user votes) — see docs/ai-predictions.md
 function formatHistorical(pct: number | null): string {
   if (pct === null) return "—";
   return pct >= 70 ? "Stopping" : pct <= 30 ? "Not stopping" : "Sometimes";
@@ -51,9 +53,6 @@ export default function BusRow({ bus }: Props) {
     ? `+${bus.delayMinutes} min late`
     : `${Math.abs(bus.delayMinutes)} min early`;
 
-  const delayColor = bus.isScheduled
-    ? "text-gray-400"
-    : onTime ? "text-green-600" : isLate ? "text-red-500" : "text-yellow-600";
 
   const delayColorClass = onTime ? "text-[var(--accent)]" : isLate ? "text-[var(--destructive)]" : "text-[var(--warning)]";
 

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const GTFS_ZIP = process.argv[2];
-const DB_PATH = path.join(__dirname, '..', 'gtfs.db');
+const DB_PATH = process.env.GTFS_DB_PATH ?? path.join(__dirname, '..', 'gtfs.db');
 
 if (!GTFS_ZIP) { console.error('Usage: node scripts/add-stops.mjs <zip>'); process.exit(1); }
 if (!existsSync(DB_PATH)) { console.error('gtfs.db not found — run import-gtfs first'); process.exit(1); }

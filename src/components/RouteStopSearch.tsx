@@ -38,6 +38,7 @@ export default function RouteStopSearch({ route, onSelect, onBack }: Props) {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (query.trim().length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults(allStops);
       setOpen(allStops.length > 0);
       return;

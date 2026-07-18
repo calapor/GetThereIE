@@ -1,0 +1,61 @@
+{{- if and .Values.gtfsRefresh.enabled .Values.persistence.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "bustracker.fullname" . }}-gtfs-refresh
+  labels:
+    {{- include "bustracker.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gtfs-refresh
+spec:
+  schedule: {{ .Values.gtfsRefresh.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            {{- include "bustracker.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: gtfs-refresh
+        spec:
+          restartPolicy: OnFailure
+          {{- include "bustracker.imagePullSecrets" . | nindent 10 }}
+          containers:
+            - name: gtfs-refresh
+              image: {{ include "bustracker.webImage" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["/bin/sh", "-c"]
+              args:
+                - >-
+                  GTFS_DB_PATH=/data/gtfs.db.new node scripts/refresh-gtfs.mjs
+                  && mv -f /data/gtfs.db.new /data/gtfs.db
+                  && rm -f /data/gtfs.db.new-wal /data/gtfs.db.new-shm
+              env:
+                - name: TZ
+                  value: Europe/Dublin
+                {{- if .Values.ntaApiKey }}
+                - name: NTA_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "bustracker.fullname" . }}-secrets
+                      key: nta-api-key
+                {{- end }}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 640Mi
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: {{ include "bustracker.fullname" . }}-data
+{{- end }}

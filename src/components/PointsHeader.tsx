@@ -16,6 +16,7 @@ export default function PointsHeader({ refreshTrigger }: Props) {
     const user = getStoredUser();
     if (!user) return;
     // Using dummy data for now - showing random rank and points
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPoints(user.points || Math.floor(Math.random() * 500) + 50);
     setRank(Math.floor(Math.random() * 1000) + 1);
     setTotal(1500);
@@ -44,8 +45,3 @@ export default function PointsHeader({ refreshTrigger }: Props) {
   );
 }
 
-function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return s[(v - 20) % 10] ?? s[v] ?? s[0];
-}

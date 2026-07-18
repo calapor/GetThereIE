@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['192.168.1.111'],
+  allowedDevOrigins: ['*'],  // dev-only: allow all origins
   typescript: { ignoreBuildErrors: true },
   images: { unoptimized: true },
   // Keep native SQLite modules external so standalone tracing includes them.

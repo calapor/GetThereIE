@@ -28,7 +28,7 @@ gtfsDbPath: /data/gtfs.db
 persistence:
   enabled: true
   storageClass: local-path
-  size: 2Gi
+  size: 4Gi
   accessMode: ReadWriteOnce
 
 ingress:
@@ -41,3 +41,8 @@ ingress:
 # NTA GTFS-RT API key (https://developer.nationaltransport.ie).
 # Leave empty to fetch the public feed without a key (may be rate-limited).
 ntaApiKey: ""
+
+# Weekly GTFS timetable refresh CronJob (writes to the PVC, app hot-reloads).
+gtfsRefresh:
+  enabled: true
+  schedule: "17 3 * * 1"   # weekly, Monday 03:17 Europe/Dublin

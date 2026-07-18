@@ -22,6 +22,7 @@ export default function RouteSearch({ onSelect }: Props) {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (query.trim().length < 1) { setResults([]); setOpen(false); return; }
     debounceRef.current = setTimeout(async () => {
       const res = await fetch(`/api/routes/search?q=${encodeURIComponent(query.trim())}`);

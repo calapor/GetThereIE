@@ -50,6 +50,7 @@ export default function NearbyStops() {
 
   // Ask for location as soon as the tab opens.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     locate();
   }, [locate]);
 

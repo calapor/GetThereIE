@@ -1,8 +1,5 @@
 import { prisma } from "./db";
-
-const BASE_POINTS = 5;
-const BONUS_POINTS = 10;
-const MAJORITY_THRESHOLD = 3;
+import { computeBonus, BASE_POINTS } from "./points-core";
 
 export interface PointsResult {
   awarded: number;
@@ -34,14 +31,9 @@ export async function awardPoints(
 
   // Check if this vote matches the majority with enough votes to trigger bonus
   const votes = await prisma.report.findMany({ where: { tripId, type } });
-  if (votes.length >= MAJORITY_THRESHOLD) {
-    const upVotes = votes.filter((r) => r.vote).length;
-    const majority = upVotes > votes.length / 2;
-    if (vote === majority) {
-      awarded += BONUS_POINTS;
-      multiplier = 3;
-    }
-  }
+  const bonus = computeBonus(votes.map((r) => r.vote), vote);
+  awarded = bonus.awarded;
+  multiplier = bonus.multiplier;
 
   const user = await prisma.user.update({
     where: { id: userId },

@@ -1,5 +1,6 @@
 import { transit_realtime } from "gtfs-realtime-bindings";
 import { getScheduledArrivalSecs, getHeadsignForRoute, getStopName, getScheduledArrivalsForStop } from "./gtfs-db";
+import { todayYYYYMMDD, dublinSecsSinceMidnight, scheduledToUnix, fmtTime } from "./time";
 import fs from "fs";
 import path from "path";
 
@@ -82,40 +83,6 @@ async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
   return feed;
 }
 
-function todayYYYYMMDD(): string {
-  // sv-SE locale gives YYYY-MM-DD in Dublin time, strip dashes → YYYYMMDD.
-  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Dublin" })
-    .format(new Date())
-    .replace(/-/g, "");
-}
-
-// Seconds elapsed since midnight in Dublin local time.
-function dublinSecsSinceMidnight(): number {
-  const parts = new Intl.DateTimeFormat("en-IE", {
-    timeZone: "Europe/Dublin",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const get = (t: string) => parseInt(parts.find((p) => p.type === t)!.value);
-  return get("hour") * 3600 + get("minute") * 60 + get("second");
-}
-
-// Converts a GTFS scheduled arrival (seconds from midnight, local time) to a
-// Unix timestamp. Relies on the server running in Europe/Dublin timezone.
-// Set TZ=Europe/Dublin in production.
-function scheduledToUnix(arrivalSecs: number, startDate: string): number {
-  const year = parseInt(startDate.slice(0, 4));
-  const month = parseInt(startDate.slice(4, 6)) - 1;
-  const day = parseInt(startDate.slice(6, 8));
-  const midnightLocal = new Date(year, month, day, 0, 0, 0).getTime() / 1000;
-  return midnightLocal + arrivalSecs;
-}
-
-function fmtTime(ts: number): string {
-  const d = new Date(ts * 1000);
-  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-}
-
 export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
   const feed = await fetchFeed();
   const now = Math.floor(Date.now() / 1000);
@@ -140,7 +107,7 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
       let scheduledUnix: number;
 
       const tripId = tu.trip?.tripId ?? entity.id;
-      const startDate = (tu.trip as any)?.startDate || todayYYYYMMDD();
+      const startDate = (tu.trip as { startDate?: string })?.startDate || todayYYYYMMDD();
       const arrivalSecs = getScheduledArrivalSecs(tripId, stopId);
 
       if (rtTime > 0) {
@@ -181,6 +148,7 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
         delaySeconds: delay,
         delayMinutes: Math.round(delay / 60),
         isStopping: !isSkipped,
+        // TODO(ai-predict): populate predicted delay + occupancy here — see docs/ai-predictions.md
         occupancyStatus: null,
         historicalStopPct: null,
         stopId,
@@ -255,7 +223,7 @@ export async function getActiveCountsByRoute(): Promise<Record<string, number>> 
     if (!shortName) continue;
 
     const tripId = trip?.tripId || entity.id;
-    const startDate = (trip as any)?.startDate || todayYYYYMMDD();
+    const startDate = (trip as { startDate?: string })?.startDate || todayYYYYMMDD();
 
     let active = false;
     for (const stu of tu.stopTimeUpdate ?? []) {
@@ -310,7 +278,7 @@ export async function getLiveTripsForRoute(routeShortName: string): Promise<Live
     if (shortName.toUpperCase() !== target) continue;
 
     const tripId = trip?.tripId || entity.id;
-    const startDate = (trip as any)?.startDate || todayYYYYMMDD();
+    const startDate = (trip as { startDate?: string })?.startDate || todayYYYYMMDD();
     const dirId = Number(trip?.directionId ?? 0);
 
     // Walk stop-time updates in order and take the first one still ahead of us.

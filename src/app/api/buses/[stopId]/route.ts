@@ -28,6 +28,7 @@ export async function GET(
       getBusesForStop(stopId),
       Promise.resolve(info?.name ?? getStopName(stopId) ?? stopId),
     ]);
+    // TODO(ai-predict): enrich response with late/full predictions — see docs/ai-predictions.md
     return NextResponse.json({ stopId, stopName, mode: "bus", fetchedAt: new Date().toISOString(), buses });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";

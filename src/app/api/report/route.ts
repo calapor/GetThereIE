@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { awardPoints } from "@/lib/points";
 
+// TODO(ai-predict): these reports are the training signal for late/full prediction — see docs/ai-predictions.md
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { userId, stopId, routeId, tripId, type, vote } = body;

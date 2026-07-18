@@ -16,7 +16,7 @@ if (!GTFS_ZIP) {
   process.exit(1);
 }
 
-const DB_PATH = path.join(__dirname, '..', 'gtfs.db');
+const DB_PATH = process.env.GTFS_DB_PATH ?? path.join(__dirname, '..', 'gtfs.db');
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = NORMAL');
