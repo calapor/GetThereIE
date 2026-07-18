@@ -11,6 +11,7 @@ WORKDIR /app
 
 FROM base AS deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY scripts/ ./scripts/
 RUN pnpm install --frozen-lockfile --config.confirmModulesPurge=false
 
 FROM deps AS build
