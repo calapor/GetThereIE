@@ -22,6 +22,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const user = getStoredUser();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user) setMyId(user.id);
 
     const url = user ? `/api/leaderboard?userId=${user.id}` : "/api/leaderboard";

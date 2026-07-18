@@ -84,6 +84,8 @@ spec:
       steps {
         container('node') {
           sh 'pnpm run lint'
+          sh 'pnpm run typecheck'
+          sh 'pnpm test'
           sh 'pnpm run build'
         }
       }
@@ -127,7 +129,7 @@ spec:
               --set image.registry="${REGISTRY}" \
               --set image.repository="${IMAGE_REPO}" \
               --set image.tag="${IMAGE_TAG}" \
-              --wait --timeout 15m
+              --wait --timeout 60m
           '''
         }
       }

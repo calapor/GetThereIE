@@ -22,7 +22,6 @@ ENV NODE_OPTIONS=--max-old-space-size=2048
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm exec prisma generate
 RUN pnpm run build
-RUN node scripts/refresh-gtfs.mjs
 
 # Production-only deps with a hoisted (flat, symlink-free) node_modules layout
 # so Docker COPY works correctly without pulling in pnpm's .pnpm virtual store.
@@ -33,7 +32,7 @@ RUN pnpm install --frozen-lockfile --prod \
     --config.confirmModulesPurge=false
 
 FROM node:22-bookworm-slim AS runner
-RUN apt-get update && apt-get install -y --no-install-recommends libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libssl3 unzip ca-certificates && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
@@ -48,14 +47,13 @@ WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 # Pre-built Next.js output
 COPY --from=build /app/.next ./.next
-# GTFS static schedule database (imported fresh during build)
-COPY --from=build /app/gtfs.db ./gtfs.db
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./
 # Prisma schema + migrations (for the init container that runs migrate deploy)
 COPY --from=build /app/prisma ./prisma
 # Generated Prisma client (compiled into .next bundles, but kept here for safety)
 COPY --from=build /app/src/generated ./src/generated
+COPY --from=build /app/scripts ./scripts
 
 EXPOSE 3000
 CMD ["node_modules/.bin/next", "start"]

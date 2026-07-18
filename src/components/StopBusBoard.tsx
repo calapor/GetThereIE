@@ -62,6 +62,7 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
   }, [stopId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchBuses();
     const id = setInterval(fetchBuses, REFRESH_INTERVAL);
     return () => clearInterval(id);

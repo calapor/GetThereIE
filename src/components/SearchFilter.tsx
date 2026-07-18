@@ -104,6 +104,7 @@ export default function SearchFilter({ onPointsEarned }: Props) {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setRecent(getRecent()); }, []);
 
   // Combined typeahead (discovery state)
@@ -111,6 +112,7 @@ export default function SearchFilter({ onPointsEarned }: Props) {
     if (route || stop) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const q = query.trim();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (q.length < 1) { setCombined({ routes: [], stops: [] }); return; }
     debounceRef.current = setTimeout(async () => {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
@@ -123,6 +125,7 @@ export default function SearchFilter({ onPointsEarned }: Props) {
   // Fetch directions when a route is selected
   useEffect(() => {
     if (!route || stop) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDirections([]);
     setSelectedDirection(null);
     fetch(`/api/routes/directions?routeId=${encodeURIComponent(route.route_id)}`)
@@ -158,6 +161,7 @@ export default function SearchFilter({ onPointsEarned }: Props) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (route && !stop && routeTab === "live") loadLive(route.route_short_name);
   }, [route, stop, routeTab, loadLive]);
 

@@ -15,7 +15,7 @@ if (!GTFS_ZIP) {
   process.exit(1);
 }
 
-const DB_PATH = path.join(__dirname, '..', 'gtfs.db');
+const DB_PATH = process.env.GTFS_DB_PATH ?? path.join(__dirname, '..', 'gtfs.db');
 
 if (existsSync(DB_PATH)) {
   unlinkSync(DB_PATH);

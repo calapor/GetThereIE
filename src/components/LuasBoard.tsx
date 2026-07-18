@@ -18,7 +18,7 @@ interface Props {
 }
 
 function DueLabel({ minutes, fetchedAt }: { minutes: number; fetchedAt: Date }) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (minutes > 3) return;
@@ -43,14 +43,15 @@ function DueLabel({ minutes, fetchedAt }: { minutes: number; fetchedAt: Date }) 
   return <span className="text-sm font-bold tabular-nums">{minutes} min</span>;
 }
 
-// Dedicated Luas board styled like a platform sign: two direction columns with
-// the destination and due-time for each tram. directionId 1 = Inbound, 0 = Outbound.
-export default function LuasBoard({ line, buses, fetchedAt }: Props) {
-  const colour = luasLineColour(line) ?? "var(--primary)";
-  const inbound = buses.filter((b) => b.directionId === 1);
-  const outbound = buses.filter((b) => b.directionId === 0);
+interface ColumnProps {
+  title: string;
+  trams: BusData[];
+  colour: string;
+  fetchedAt: Date;
+}
 
-  const Column = ({ title, trams }: { title: string; trams: BusData[] }) => (
+function Column({ title, trams, colour, fetchedAt }: ColumnProps) {
+  return (
     <div className="flex-1 min-w-0">
       <div
         className="text-xs font-bold uppercase tracking-wider px-3 py-2 text-white rounded-t-lg"
@@ -73,6 +74,14 @@ export default function LuasBoard({ line, buses, fetchedAt }: Props) {
       </div>
     </div>
   );
+}
+
+// Dedicated Luas board styled like a platform sign: two direction columns with
+// the destination and due-time for each tram. directionId 1 = Inbound, 0 = Outbound.
+export default function LuasBoard({ line, buses, fetchedAt }: Props) {
+  const colour = luasLineColour(line) ?? "var(--primary)";
+  const inbound = buses.filter((b) => b.directionId === 1);
+  const outbound = buses.filter((b) => b.directionId === 0);
 
   return (
     <div className="card p-3">
@@ -81,8 +90,8 @@ export default function LuasBoard({ line, buses, fetchedAt }: Props) {
         <span className="text-sm font-bold text-[var(--foreground)]">Luas {line} Line</span>
       </div>
       <div className="flex gap-3">
-        <Column title="Inbound" trams={inbound} />
-        <Column title="Outbound" trams={outbound} />
+        <Column title="Inbound" trams={inbound} colour={colour} fetchedAt={fetchedAt} />
+        <Column title="Outbound" trams={outbound} colour={colour} fetchedAt={fetchedAt} />
       </div>
     </div>
   );

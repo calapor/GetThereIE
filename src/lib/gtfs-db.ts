@@ -135,6 +135,8 @@ function hasTable(d: BetterSqlite3.Database, table: string): boolean {
   return exists;
 }
 function hasColumn(d: BetterSqlite3.Database, table: string, col: string): boolean {
+  const KNOWN_TABLES = new Set(["stops", "routes", "trips", "stop_times", "calendar", "calendar_dates"]);
+  if (!KNOWN_TABLES.has(table)) return false;
   const key = `${table}.${col}`;
   const cached = columnCache.get(key);
   if (cached !== undefined) return cached;
@@ -421,7 +423,7 @@ export function getStopCoords(stopId: string): { lat: number; lon: number } | nu
   return { lat: row.stop_lat, lon: row.stop_lon };
 }
 
-function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+export function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6_371_000;
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
