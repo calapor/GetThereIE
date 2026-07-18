@@ -15,7 +15,7 @@ spec:
       command: ["sleep"]
       args: ["infinity"]
       resources:
-        requests: { cpu: "500m", memory: "1Gi" }
+        requests: { cpu: "250m", memory: "512Mi" }
         limits:   { cpu: "2",    memory: "2Gi" }
 
     - name: helm
@@ -23,7 +23,7 @@ spec:
       command: ["sleep"]
       args: ["infinity"]
       resources:
-        requests: { cpu: "100m", memory: "128Mi" }
+        requests: { cpu: "50m",  memory: "64Mi" }
         limits:   { cpu: "500m", memory: "256Mi" }
 
     - name: buildah
@@ -36,7 +36,7 @@ spec:
         # ephemeral-storage routes the agent onto a node with enough free disk.
         # The vfs driver copies every layer in full; Next.js + pnpm store need
         # several GB. Without this the pod can land on a nearly-full Pi node.
-        requests: { cpu: "500m", memory: "1.5Gi", ephemeral-storage: "12Gi" }
+        requests: { cpu: "250m", memory: "512Mi", ephemeral-storage: "12Gi" }
         limits:   { cpu: "2",    memory: "3Gi" }
 '''
     }
