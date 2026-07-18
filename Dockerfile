@@ -28,6 +28,7 @@ RUN pnpm run build
 # so Docker COPY works correctly without pulling in pnpm's .pnpm virtual store.
 FROM base AS prod-deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY scripts/ ./scripts/
 RUN pnpm install --frozen-lockfile --prod \
     --config.node-linker=hoisted \
     --config.confirmModulesPurge=false
