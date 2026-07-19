@@ -129,7 +129,7 @@ spec:
               --set image.registry="${REGISTRY}" \
               --set image.repository="${IMAGE_REPO}" \
               --set image.tag="${IMAGE_TAG}" \
-              --wait --timeout 60m
+              --wait --timeout 200m
           '''
         }
       }
