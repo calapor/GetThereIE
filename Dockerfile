@@ -35,8 +35,7 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY scripts/ ./scripts/
 RUN pnpm install --frozen-lockfile --prod \
     --config.node-linker=hoisted \
-    --config.confirmModulesPurge=false \
-    --config.optional=false
+    --config.confirmModulesPurge=false
 
 FROM node:22-bookworm-slim AS runner
 RUN apt-get update && apt-get install -y --no-install-recommends libssl3 unzip ca-certificates && rm -rf /var/lib/apt/lists/*
