@@ -5,8 +5,8 @@ ENV CI=true
 ENV PNPM_CONFIG_CONFIRM_MODULES_PURGE=false
 ENV PATH="$PNPM_HOME:$PATH"
 # Double pnpm's default network timeouts (60 s → 120 s) for slow Pi egress.
-ENV PNPM_CONFIG_FETCH_TIMEOUT=120000
-ENV PNPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
+ENV PNPM_CONFIG_FETCH_TIMEOUT=240000
+ENV PNPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=240000
 ENV PNPM_CONFIG_FETCH_RETRIES=3
 RUN corepack enable && corepack prepare pnpm@11.1.1 --activate
 # better-sqlite3 and @prisma/engines require native compilation tools.
