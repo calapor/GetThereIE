@@ -9,6 +9,10 @@ spec:
   serviceAccountName: jenkins-deployer
   securityContext:
     fsGroup: 1000
+  volumes:
+    - name: buildah-storage
+      emptyDir:
+        sizeLimit: 12Gi
   containers:
     - name: node
       image: node:22-bookworm
@@ -32,12 +36,15 @@ spec:
       args: ["infinity"]
       securityContext:
         privileged: true
+      volumeMounts:
+        - name: buildah-storage
+          mountPath: /var/lib/containers  
       resources:
         # ephemeral-storage routes the agent onto a node with enough free disk.
         # The vfs driver copies every layer in full; Next.js + pnpm store need
         # several GB. Without this the pod can land on a nearly-full Pi node.
         requests: { cpu: "250m", memory: "512Mi", ephemeral-storage: "12Gi" }
-        limits:   { cpu: "2",    memory: "3Gi" }
+        limits:   { cpu: "2",    memory: "3Gi", ephemeral-storage: "16Gi" }
 '''
     }
   }
@@ -98,11 +105,21 @@ spec:
       steps {
         container('buildah') {
           sh '''
-            buildah --storage-driver vfs rm --all || true
-            buildah --storage-driver vfs rmi --prune || true
+            echo "=== Storage before cleanup ==="
+            df -h /var/lib/containers || true
+            buildah info || true
+            du -sh /var/lib/containers || true
+
+            echo "=== Cleanup ==="
+            buildah --root /var/lib/containers/storage --storage-driver vfs rm --all || true
+            buildah --root /var/lib/containers/storage --storage-driver vfs rmi --prune || true
+            echo "=== Storage after cleanup ==="
+            df -h /var/lib/containers || true
+            du -sh /var/lib/containers || true
           '''
           sh '''
-            buildah --storage-driver vfs bud --isolation chroot \
+            echo "=== Building image ==="
+            buildah --root /var/lib/containers/storage --storage-driver vfs bud --isolation chroot \
               -f Dockerfile \
               --build-arg "APP_VERSION=${IMAGE_TAG} (#${BUILD_NUMBER})" \
               -t "${REGISTRY}/${IMAGE_REPO}/web:${IMAGE_TAG}" \
@@ -141,8 +158,8 @@ spec:
     always {
       container('buildah') {
         sh '''
-          buildah --storage-driver vfs rm --all || true
-          buildah --storage-driver vfs rmi --all || true
+          buildah --root /var/lib/containers/storage --storage-driver vfs rm --all || true
+          buildah --root /var/lib/containers/storage --storage-driver vfs rmi --all || true
         '''
       }
     }
