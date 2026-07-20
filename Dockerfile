@@ -55,6 +55,8 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./
+# changed for prisma errors.
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 # Prisma schema + migrations (for the init container that runs migrate deploy)
 COPY --from=build /app/prisma ./prisma
 # Generated Prisma client (compiled into .next bundles, but kept here for safety)
