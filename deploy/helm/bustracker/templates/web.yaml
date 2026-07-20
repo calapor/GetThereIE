@@ -26,10 +26,12 @@ spec:
         - name: migrate
           image: {{ include "bustracker.webImage" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          # Run Prisma migrations against the SQLite DB before the app starts.
           command: ["/bin/sh", "-c"]
           args:
-            - 'DATABASE_URL="file:$(DATABASE_PATH)" node_modules/.bin/prisma migrate deploy'
+            - |
+              export DATABASE_URL="file:${DATABASE_PATH}"
+              echo "Running migrations with DATABASE_URL=${DATABASE_URL}"
+              node_modules/.bin/prisma migrate deploy
           env:
             - name: DATABASE_PATH
               value: {{ .Values.databasePath | quote }}
