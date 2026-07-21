@@ -140,14 +140,17 @@ spec:
       }
       steps {
         container('helm') {
-          sh '''
-            helm upgrade --install bustracker deploy/helm/bustracker \
-              --namespace "${NAMESPACE}" --create-namespace \
-              --set image.registry="${REGISTRY}" \
-              --set image.repository="${IMAGE_REPO}" \
-              --set image.tag="${IMAGE_TAG}" \
-              --wait --timeout 200m
-          '''
+          withCredentials([string(credentialsId: 'nta-api-key', variable: 'NTA_API_KEY')]) {
+            sh '''
+              helm upgrade --install bustracker deploy/helm/bustracker \
+                --namespace "${NAMESPACE}" --create-namespace \
+                --set image.registry="${REGISTRY}" \
+                --set image.repository="${IMAGE_REPO}" \
+                --set image.tag="${IMAGE_TAG}" \
+                --set ntaApiKey="${NTA_API_KEY}" \
+                --wait --timeout 200m
+            '''
+          }
         }
       }
     }
