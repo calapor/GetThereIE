@@ -98,7 +98,7 @@ metadata:
     {{- include "bustracker.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
-  type: ClusterIP
+  type: {{ .Values.service.type }}
   selector:
     {{- include "bustracker.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: web
@@ -106,3 +106,6 @@ spec:
     - name: http
       port: 80
       targetPort: http
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}

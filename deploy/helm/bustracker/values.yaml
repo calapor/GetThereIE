@@ -38,6 +38,10 @@ ingress:
   annotations: {}
   tls: []
 
+service:
+  type: NodePort
+  nodePort: 30400   # external port on every cluster node; change if already taken
+
 # NTA GTFS-RT API key (https://developer.nationaltransport.ie).
 # Leave empty to fetch the public feed without a key (may be rate-limited).
 ntaApiKey: ""
