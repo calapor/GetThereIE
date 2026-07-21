@@ -1,7 +1,7 @@
 # Bus Tracker Ireland (GetThereIE)
 
 <p align="center">
-  <img src="public/getthereie-rect-trans.png" alt="GetThereIE" width="680" />
+  <img src="public/getthereie-rect-trans.png" alt="GetThereIE" width="340" />
 </p>
 
 [![CI](https://github.com/calapor/GetThereIE/actions/workflows/ci.yml/badge.svg)](https://github.com/calapor/GetThereIE/actions/workflows/ci.yml)
