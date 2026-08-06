@@ -23,14 +23,14 @@ designed, built, tested, and operated.
 
 ## Reading paths
 
-**Recruiter (5 min):** [0 — Product & Design Brief](0-product-design-brief.md), then the
+**Quick overview (5 min):** [0 — Product & Design Brief](0-product-design-brief.md), then the
 [main README](../../README.md) feature list.
 
-**Hiring Manager (15 min):** [0 — Product Brief](0-product-design-brief.md) →
+**Product and delivery focus (15 min):** [0 — Product Brief](0-product-design-brief.md) →
 [2 — System Architecture](2-system-architecture.md) →
 [9 — Engineering Decision Log](9-engineering-decision-log.md).
 
-**Technical Interview (30 min):** [2 — System Architecture](2-system-architecture.md) →
+**Full technical depth (30 min):** [2 — System Architecture](2-system-architecture.md) →
 [5 — GTFS Integration Deep Dive](5-gtfs-integration-deep-dive.md) →
 [3 — Data Model Reference](3-data-model-reference.md) →
 [4 — Testing Strategy](4-testing-strategy.md) →
