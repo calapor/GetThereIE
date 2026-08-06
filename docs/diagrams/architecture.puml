@@ -1,0 +1,80 @@
+@startuml architecture
+' GetThereIE — system architecture
+' Render: plantuml docs/diagrams/architecture.puml
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam rectangle {
+  BackgroundColor #FDFDFD
+  BorderColor #4A4A4A
+}
+
+title GetThereIE — Live Dublin Bus & Luas Tracking
+
+actor "User\n(mobile browser)" as User
+
+package "External data sources" {
+  [NTA GTFS-Realtime\nTripUpdates (protobuf)] as NTA
+  [RPA Luas Forecasts\n(XML)] as Luas
+  [Transport for Ireland\nGTFS static ZIPs] as TFI
+}
+
+package "Next.js app (App Router)" {
+  package "Client (React 19)" {
+    [SearchFilter /\nRouteCard / BusRow] as UI
+    [ThumbButtons\n(reporting)] as Thumbs
+  }
+
+  package "Route Handlers (/api)" {
+    [/api/search] as SearchAPI
+    [/api/buses/[stopId]] as BusesAPI
+    [/api/routes/live] as LiveAPI
+    [/api/stops/nearby] as NearbyAPI
+    [/api/report] as ReportAPI
+  }
+
+  package "Server libs (src/lib)" {
+    [nta.ts\nfeed decode + cache\n+ ETA join] as NtaLib
+    [luas.ts\nforecast parse] as LuasLib
+    [gtfs-db.ts\nbetter-sqlite3 queries] as GtfsLib
+    [time.ts\npure date/time] as TimeLib
+    [points.ts /\npoints-core.ts] as PointsLib
+  }
+}
+
+package "Data stores" {
+  database "gtfs.db\n(static schedule, read-only)\nstops · routes · trips\nstop_times · calendar" as GtfsDB
+  database "dev.db\n(Prisma / app state)\nUser · Report" as AppDB
+}
+
+package "Refresh pipeline (scripts)" {
+  [refresh-gtfs.mjs\n+ import/add-* scripts] as Refresh
+}
+
+User --> UI
+UI --> SearchAPI
+UI --> BusesAPI
+UI --> LiveAPI
+UI --> NearbyAPI
+Thumbs --> ReportAPI
+
+SearchAPI --> GtfsLib
+BusesAPI --> NtaLib
+BusesAPI --> LuasLib
+LiveAPI --> NtaLib
+NearbyAPI --> GtfsLib
+ReportAPI --> PointsLib
+
+NtaLib --> NTA : x-api-key\n(25s mem + disk cache)
+NtaLib --> GtfsLib : scheduled arrival lookup
+NtaLib --> TimeLib
+LuasLib --> Luas : per-stop (20s cache)
+GtfsLib --> GtfsDB
+PointsLib --> AppDB
+
+Refresh --> TFI : download ZIPs
+Refresh --> GtfsDB : rebuild weekly
+Refresh --> Luas : stop list
+
+@enduml
