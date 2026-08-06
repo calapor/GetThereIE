@@ -12,8 +12,7 @@ local static GTFS schedule. Users search by route or stop, browse nearby stops, 
 against the timetable, and earn points by reporting bus status.
 
 > ### 📓 [Portfolio documentation →](docs/portfolio/README.md)
-> Engineering write-ups for technical interviews and portfolio review — architecture, data model,
-> GTFS integration, testing strategy, deployment, and a decision log.
+> Architecture, data model, GTFS integration, testing strategy, deployment, and a decision log.
 
 ## Features
 
