@@ -8,26 +8,31 @@ interface Props {
 }
 
 function useCountUp(target: number | null, duration = 600): number | null {
-  const [displayed, setDisplayed] = useState<number | null>(target);
-  const prevRef = useRef<number | null>(target);
+  const [displayed, setDisplayed] = useState<number | null>(null);
+  const prevRef = useRef<number | null>(null);
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
-    if (target === null) { setDisplayed(null); return; }
+    if (target === null) {
+      prevRef.current = null;
+      return;
+    }
     const from = prevRef.current ?? target;
     prevRef.current = target;
-    if (from === target) { setDisplayed(target); return; }
+    cancelAnimationFrame(rafRef.current);
+    if (from === target) return;
     const start = performance.now();
-    let raf: number;
     function step(now: number) {
       const t = Math.min(1, (now - start) / duration);
       setDisplayed(Math.round(from + (target! - from) * t));
-      if (t < 1) raf = requestAnimationFrame(step);
+      if (t < 1) rafRef.current = requestAnimationFrame(step);
     }
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
   }, [target, duration]);
 
-  return displayed;
+  if (target === null) return null;
+  return displayed ?? target;
 }
 
 export default function PointsHeader({ refreshTrigger }: Props) {
@@ -49,13 +54,13 @@ export default function PointsHeader({ refreshTrigger }: Props) {
       .then((r) => r.json())
       .then((data) => { if (data.points !== undefined) setPoints(data.points); })
       .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTrigger]);
 
   const displayedPoints = useCountUp(points);
 
   return (
     <header className="app-header sticky top-0 z-40 border-b border-[var(--border)] backdrop-blur-sm px-4 py-3 flex items-center justify-between gap-3">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/logo-rect.png" alt="GetThereIE" className="h-20 w-auto shrink-0" />
       <div className="flex flex-col items-end gap-0.5 text-right">
         {displayedPoints !== null ? (
