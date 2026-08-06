@@ -199,6 +199,13 @@ current automatically. GitHub Actions CI (`.github/workflows/ci.yml`) runs lint,
 build, and a gitleaks secret scan on every push and PR; Jenkins handles the image push and cluster
 deploy on `main` only. See [`docs/portfolio/8-deployment-and-operations.md`](docs/portfolio/8-deployment-and-operations.md).
 
+### Monitoring
+
+The deployed service is monitored by **Uptime Kuma**, which runs in the `platform` namespace on the
+same k3s cluster. Uptime Kuma watches the GetThereIE service endpoint and alerts when thresholds are
+breached (endpoint down or response time exceeded). The dashboard is at `http://192.168.1.101:30001`.
+Monitor configuration is managed through the Uptime Kuma web UI and is not stored in this repo.
+
 ## Documentation
 
 - [docs/portfolio/](docs/portfolio/README.md) — full engineering portfolio (9 documents)

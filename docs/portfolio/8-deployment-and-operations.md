@@ -82,6 +82,15 @@ The static timetable is treated as a rebuildable artifact refreshed on a schedul
   This takes roughly 30–60 minutes on a Pi (millions of `stop_times` rows). After it completes, the
   weekly CronJob keeps the data current automatically.
 
+## Uptime monitoring
+
+Production uptime is monitored by **Uptime Kuma**, which runs in the shared `platform` namespace on
+the same k3s cluster. It watches the deployed GetThereIE service endpoint and alerts the operator
+when thresholds are breached (endpoint down or response time exceeded), complementing the app's own
+`/api/healthz` liveness/readiness probes. The Uptime Kuma dashboard is at
+`http://192.168.1.101:30001`; monitor configuration lives in Uptime Kuma's own database and is
+managed via its web UI rather than in this repo.
+
 ## Operational notes
 
 - **Stale-schedule symptom:** an empty board with no error usually means the imported trip IDs no
