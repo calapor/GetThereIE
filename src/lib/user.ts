@@ -27,6 +27,10 @@ export function updateStoredPoints(points: number): void {
   if (user) setStoredUser({ ...user, points });
 }
 
+export function clearStoredUser(): void {
+  localStorage.removeItem(KEY);
+}
+
 export async function registerUser(username: string): Promise<StoredUser> {
   const res = await fetch("/api/user", {
     method: "POST",

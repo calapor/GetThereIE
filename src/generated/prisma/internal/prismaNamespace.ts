@@ -385,7 +385,9 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
-  Report: 'Report'
+  Report: 'Report',
+  WeatherCache: 'WeatherCache',
+  NarrationCache: 'NarrationCache'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -401,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "report"
+    modelProps: "user" | "report" | "weatherCache" | "narrationCache"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -553,6 +555,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    WeatherCache: {
+      payload: Prisma.$WeatherCachePayload<ExtArgs>
+      fields: Prisma.WeatherCacheFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WeatherCacheFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WeatherCacheFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>
+        }
+        findFirst: {
+          args: Prisma.WeatherCacheFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WeatherCacheFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>
+        }
+        findMany: {
+          args: Prisma.WeatherCacheFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>[]
+        }
+        create: {
+          args: Prisma.WeatherCacheCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>
+        }
+        createMany: {
+          args: Prisma.WeatherCacheCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WeatherCacheCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>[]
+        }
+        delete: {
+          args: Prisma.WeatherCacheDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>
+        }
+        update: {
+          args: Prisma.WeatherCacheUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>
+        }
+        deleteMany: {
+          args: Prisma.WeatherCacheDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WeatherCacheUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WeatherCacheUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>[]
+        }
+        upsert: {
+          args: Prisma.WeatherCacheUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WeatherCachePayload>
+        }
+        aggregate: {
+          args: Prisma.WeatherCacheAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWeatherCache>
+        }
+        groupBy: {
+          args: Prisma.WeatherCacheGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WeatherCacheGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WeatherCacheCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WeatherCacheCountAggregateOutputType> | number
+        }
+      }
+    }
+    NarrationCache: {
+      payload: Prisma.$NarrationCachePayload<ExtArgs>
+      fields: Prisma.NarrationCacheFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NarrationCacheFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NarrationCacheFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>
+        }
+        findFirst: {
+          args: Prisma.NarrationCacheFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NarrationCacheFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>
+        }
+        findMany: {
+          args: Prisma.NarrationCacheFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>[]
+        }
+        create: {
+          args: Prisma.NarrationCacheCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>
+        }
+        createMany: {
+          args: Prisma.NarrationCacheCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NarrationCacheCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>[]
+        }
+        delete: {
+          args: Prisma.NarrationCacheDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>
+        }
+        update: {
+          args: Prisma.NarrationCacheUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>
+        }
+        deleteMany: {
+          args: Prisma.NarrationCacheDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NarrationCacheUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NarrationCacheUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>[]
+        }
+        upsert: {
+          args: Prisma.NarrationCacheUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NarrationCachePayload>
+        }
+        aggregate: {
+          args: Prisma.NarrationCacheAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNarrationCache>
+        }
+        groupBy: {
+          args: Prisma.NarrationCacheGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationCacheGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NarrationCacheCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NarrationCacheCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -613,12 +763,40 @@ export const ReportScalarFieldEnum = {
 export type ReportScalarFieldEnum = (typeof ReportScalarFieldEnum)[keyof typeof ReportScalarFieldEnum]
 
 
+export const WeatherCacheScalarFieldEnum = {
+  dateHour: 'dateHour',
+  temperatureC: 'temperatureC',
+  precipitationMm: 'precipitationMm',
+  windKmh: 'windKmh',
+  fetchedAt: 'fetchedAt'
+} as const
+
+export type WeatherCacheScalarFieldEnum = (typeof WeatherCacheScalarFieldEnum)[keyof typeof WeatherCacheScalarFieldEnum]
+
+
+export const NarrationCacheScalarFieldEnum = {
+  key: 'key',
+  text: 'text',
+  fetchedAt: 'fetchedAt'
+} as const
+
+export type NarrationCacheScalarFieldEnum = (typeof NarrationCacheScalarFieldEnum)[keyof typeof NarrationCacheScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 
@@ -773,6 +951,8 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   report?: Prisma.ReportOmit
+  weatherCache?: Prisma.WeatherCacheOmit
+  narrationCache?: Prisma.NarrationCacheOmit
 }
 
 /* Types for Logging */

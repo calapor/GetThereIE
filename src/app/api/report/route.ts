@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { awardPoints } from "@/lib/points";
+import { prisma } from "@/lib/db";
 
-// TODO(ai-predict): these reports are the training signal for late/full prediction — see docs/ai-predictions.md
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { userId, stopId, routeId, tripId, type, vote } = body;
@@ -9,8 +9,13 @@ export async function POST(req: NextRequest) {
   if (!userId || !stopId || !routeId || !tripId || !type || vote === undefined) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
-  if (type !== "STOPPED" && type !== "ON_TIME") {
+  if (type !== "STOPPED" && type !== "ON_TIME" && type !== "FULL") {
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    return NextResponse.json({ error: "User not found", userNotFound: true }, { status: 404 });
   }
 
   try {

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="38" failures="0" errors="0" time="0.118523351">
+    <testsuite name="src/lib/calendar-ie.test.ts" timestamp="2026-08-06T07:33:13.631Z" hostname="Richards-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.016131807">
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; marks New Year 2026 as a bank holiday" time="0.003419433">
+        </testcase>
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; marks St Patrick&apos;s Day 2026 as a bank holiday" time="0.000392983">
+        </testcase>
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; marks a regular weekday in school term as not a holiday" time="0.000310655">
+        </testcase>
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; marks mid-summer as school holiday" time="0.006115433">
+        </testcase>
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; marks mid-summer as college holiday" time="0.000244942">
+        </testcase>
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; marks a college term date as not a college holiday" time="0.000260114">
+        </testcase>
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; returns an empty label on a normal school/college day" time="0.000208203">
+        </testcase>
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; Christmas Day is a bank holiday and school holiday" time="0.000323425">
+        </testcase>
+        <testcase classname="src/lib/calendar-ie.test.ts" name="getCalendarContext &gt; mid-October half-term is a school holiday" time="0.002893368">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/lib/gtfs-db.distance.test.ts" timestamp="2026-08-06T07:33:13.637Z" hostname="Richards-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.003823203">
+        <testcase classname="src/lib/gtfs-db.distance.test.ts" name="haversineMeters &gt; is zero for identical points" time="0.001778736">
+        </testcase>
+        <testcase classname="src/lib/gtfs-db.distance.test.ts" name="haversineMeters &gt; approximates a known Dublin distance" time="0.000628292">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/lib/points-core.test.ts" timestamp="2026-08-06T07:33:13.638Z" hostname="Richards-MacBook-Pro.local" tests="4" failures="0" errors="0" skipped="0" time="0.00552625">
+        <testcase classname="src/lib/points-core.test.ts" name="computeBonus &gt; awards only base points below the majority threshold" time="0.002143489">
+        </testcase>
+        <testcase classname="src/lib/points-core.test.ts" name="computeBonus &gt; awards bonus when the vote matches the majority (&gt;=3 votes)" time="0.000460992">
+        </testcase>
+        <testcase classname="src/lib/points-core.test.ts" name="computeBonus &gt; awards no bonus when the vote is against the majority" time="0.000514396">
+        </testcase>
+        <testcase classname="src/lib/points-core.test.ts" name="computeBonus &gt; treats an exact tie as majority=false" time="0.000345746">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/lib/predictions-core.test.ts" timestamp="2026-08-06T07:33:13.659Z" hostname="Richards-MacBook-Pro.local" tests="18" failures="0" errors="0" skipped="0" time="0.083390854">
+        <testcase classname="src/lib/predictions-core.test.ts" name="smoothedProbability &gt; returns prior when no votes" time="0.006092019">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="smoothedProbability &gt; converges toward observed rate with many votes" time="0.00060928">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="smoothedProbability &gt; unanimous positive pushes toward 1" time="0.000215102">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="smoothedProbability &gt; unanimous negative pushes toward 0" time="0.00025698">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="smoothedProbability &gt; handles tie (50/50)" time="0.000184231">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictStopProbability &gt; returns high probability with no data (prior 0.8)" time="0.001371581">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictStopProbability &gt; penalises for full bus earlier on route" time="0.000670798">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictStopProbability &gt; adds bank holiday factor and boosts probability" time="0.000423008">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictStopProbability &gt; probability stays within [0.01, 0.99]" time="0.002568829">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictOnTimeProbability &gt; returns moderate probability with no data (prior 0.6)" time="0.000576153">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictOnTimeProbability &gt; reduces probability in heavy rain" time="0.000570299">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictOnTimeProbability &gt; bank holiday boosts on-time probability" time="0.000270833">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictOnTimeProbability &gt; school holidays also boost on-time probability" time="0.000219078">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictFullness &gt; returns low probability with no data (prior 0.3)" time="0.000371288">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictFullness &gt; rain increases fullness probability" time="0.00033837">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictFullness &gt; school term rush hour increases fullness" time="0.000255882">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictFullness &gt; school holiday suppresses rush hour boost" time="0.000275224">
+        </testcase>
+        <testcase classname="src/lib/predictions-core.test.ts" name="predictFullness &gt; high vote majority yields high fullness probability" time="0.000151523">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/lib/time.test.ts" timestamp="2026-08-06T07:33:13.674Z" hostname="Richards-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.009651237">
+        <testcase classname="src/lib/time.test.ts" name="scheduledToUnix + fmtTime &gt; round-trips a scheduled arrival back to HH:MM" time="0.002234218">
+        </testcase>
+        <testcase classname="src/lib/time.test.ts" name="scheduledToUnix + fmtTime &gt; pads single-digit hours and minutes" time="0.000878814">
+        </testcase>
+        <testcase classname="src/lib/time.test.ts" name="minutesUntil &gt; floors whole minutes" time="0.000304653">
+        </testcase>
+        <testcase classname="src/lib/time.test.ts" name="minutesUntil &gt; never returns negative" time="0.000210974">
+        </testcase>
+        <testcase classname="src/lib/time.test.ts" name="delayToMinutes &gt; rounds to nearest minute" time="0.000403726">
+        </testcase>
+    </testsuite>
+</testsuites>

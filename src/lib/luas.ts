@@ -63,6 +63,11 @@ function parseForecast(xml: string, abbrev: string, line: string): BusArrival[] 
         historicalStopPct: null,
         stopId: `LUAS_${abbrev}`,
         isScheduled: false,
+        stopProbability: null,
+        onTimeProbability: null,
+        fullnessProbability: null,
+        predictionFactors: [],
+        predictionSampleCount: 0,
       });
     }
   }

@@ -29,6 +29,11 @@ export interface BusArrival {
   historicalStopPct: number | null;
   stopId: string;
   isScheduled: boolean;
+  stopProbability: number | null;
+  onTimeProbability: number | null;
+  fullnessProbability: number | null;
+  predictionFactors: string[];
+  predictionSampleCount: number;
 }
 
 async function fetchFeed(): Promise<transit_realtime.FeedMessage> {
@@ -148,11 +153,15 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
         delaySeconds: delay,
         delayMinutes: Math.round(delay / 60),
         isStopping: !isSkipped,
-        // TODO(ai-predict): populate predicted delay + occupancy here — see docs/ai-predictions.md
         occupancyStatus: null,
         historicalStopPct: null,
         stopId,
         isScheduled: false,
+        stopProbability: null,
+        onTimeProbability: null,
+        fullnessProbability: null,
+        predictionFactors: [],
+        predictionSampleCount: 0,
       });
       break;
     }
@@ -197,6 +206,11 @@ export async function getBusesForStop(stopId: string): Promise<BusArrival[]> {
       historicalStopPct: null,
       stopId,
       isScheduled: true,
+      stopProbability: null,
+      onTimeProbability: null,
+      fullnessProbability: null,
+      predictionFactors: [],
+      predictionSampleCount: 0,
     });
   }
 

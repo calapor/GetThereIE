@@ -28,3 +28,17 @@ model Report {
 
   @@unique([userId, tripId, type])
 }
+
+model WeatherCache {
+  dateHour        String   @id
+  temperatureC    Float?
+  precipitationMm Float?
+  windKmh         Float?
+  fetchedAt       DateTime
+}
+
+model NarrationCache {
+  key       String   @id
+  text      String
+  fetchedAt DateTime
+}
