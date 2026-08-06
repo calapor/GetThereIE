@@ -1,6 +1,6 @@
 # GetThereIE — Portfolio Documentation
 
-> Engineering documentation for technical interviews and portfolio review.
+> Engineering documentation for this project.
 
 GetThereIE is a live Dublin Bus and Luas tracker built on the National Transport Authority (NTA)
 GTFS-Realtime feed and a locally imported static GTFS timetable. This folder documents how it is
