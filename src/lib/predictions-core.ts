@@ -37,7 +37,7 @@ export function predictStopProbability(params: {
   weather: WeatherContext;
   calendar: CalendarContext;
 }): PredictionResult {
-  const { stopVotes, fullEarlierOnRoute, weather, calendar } = params;
+  const { stopVotes, fullEarlierOnRoute, calendar } = params;
   const factors: string[] = [];
 
   let prob = smoothedProbability(stopVotes.positive, stopVotes.total, 0.8, 2);

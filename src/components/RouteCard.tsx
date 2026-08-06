@@ -38,7 +38,7 @@ interface Props {
 
 type VoteType = "STOPPED" | "ON_TIME" | "FULL";
 
-export default function RouteCard({ routeId, stopId, stopName, buses, onPointsEarned, onUserNotFound }: Props) {
+export default function RouteCard({ routeId, stopId, buses, onPointsEarned, onUserNotFound }: Props) {
   const [votes, setVotes] = useState<Map<string, boolean>>(new Map());
   const { showToast } = useToast();
 
