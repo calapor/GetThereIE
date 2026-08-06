@@ -52,7 +52,9 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
-  Report: 'Report'
+  Report: 'Report',
+  WeatherCache: 'WeatherCache',
+  NarrationCache: 'NarrationCache'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -92,10 +94,38 @@ export const ReportScalarFieldEnum = {
 export type ReportScalarFieldEnum = (typeof ReportScalarFieldEnum)[keyof typeof ReportScalarFieldEnum]
 
 
+export const WeatherCacheScalarFieldEnum = {
+  dateHour: 'dateHour',
+  temperatureC: 'temperatureC',
+  precipitationMm: 'precipitationMm',
+  windKmh: 'windKmh',
+  fetchedAt: 'fetchedAt'
+} as const
+
+export type WeatherCacheScalarFieldEnum = (typeof WeatherCacheScalarFieldEnum)[keyof typeof WeatherCacheScalarFieldEnum]
+
+
+export const NarrationCacheScalarFieldEnum = {
+  key: 'key',
+  text: 'text',
+  fetchedAt: 'fetchedAt'
+} as const
+
+export type NarrationCacheScalarFieldEnum = (typeof NarrationCacheScalarFieldEnum)[keyof typeof NarrationCacheScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

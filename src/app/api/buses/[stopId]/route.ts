@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStopName, getStopInfo, getLineForStop } from "@/lib/gtfs-db";
 import { getBusesForStop } from "@/lib/nta";
 import { getLuasForecastForStop } from "@/lib/luas";
+import { getPredictionsForBuses } from "@/lib/predictions";
 
 export async function GET(
   _req: NextRequest,
@@ -11,7 +12,6 @@ export async function GET(
   try {
     const info = getStopInfo(stopId);
 
-    // Luas stops are served by the RPA forecast API, not the NTA feed.
     if (info?.mode === "luas" && info.abbrev) {
       const line = getLineForStop(stopId) ?? "";
       const buses = await getLuasForecastForStop(info.abbrev, line);
@@ -28,8 +28,22 @@ export async function GET(
       getBusesForStop(stopId),
       Promise.resolve(info?.name ?? getStopName(stopId) ?? stopId),
     ]);
-    // TODO(ai-predict): enrich response with late/full predictions — see docs/ai-predictions.md
-    return NextResponse.json({ stopId, stopName, mode: "bus", fetchedAt: new Date().toISOString(), buses });
+
+    const predictions = await getPredictionsForBuses(stopId, buses);
+    const enriched = buses.map((b) => {
+      const pred = predictions.get(b.tripId);
+      if (!pred) return b;
+      return {
+        ...b,
+        stopProbability: pred.stopProbability,
+        onTimeProbability: pred.onTimeProbability,
+        fullnessProbability: pred.fullnessProbability,
+        predictionFactors: pred.predictionFactors,
+        predictionSampleCount: pred.predictionSampleCount,
+      };
+    });
+
+    return NextResponse.json({ stopId, stopName, mode: "bus", fetchedAt: new Date().toISOString(), buses: enriched });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 502 });

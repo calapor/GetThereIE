@@ -51,3 +51,13 @@ export type User = Prisma.UserModel
  * 
  */
 export type Report = Prisma.ReportModel
+/**
+ * Model WeatherCache
+ * 
+ */
+export type WeatherCache = Prisma.WeatherCacheModel
+/**
+ * Model NarrationCache
+ * 
+ */
+export type NarrationCache = Prisma.NarrationCacheModel

@@ -12,7 +12,7 @@ export async function awardPoints(
   stopId: string,
   routeId: string,
   tripId: string,
-  type: "STOPPED" | "ON_TIME",
+  type: "STOPPED" | "ON_TIME" | "FULL",
   vote: boolean
 ): Promise<PointsResult> {
   let awarded = 0;

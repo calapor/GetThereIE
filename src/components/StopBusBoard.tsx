@@ -17,26 +17,26 @@ interface BusData {
   minutesAway: number;
   delayMinutes: number;
   isStopping: boolean;
-  occupancyStatus: string | null;
-  historicalStopPct: number | null;
   isScheduled?: boolean;
+  stopProbability?: number | null;
+  onTimeProbability?: number | null;
+  fullnessProbability?: number | null;
+  predictionFactors?: string[];
+  predictionSampleCount?: number;
 }
 
 interface Props {
   stopId: string;
   onPointsEarned: () => void;
-  // When set, only show buses whose route short name matches (faceted filter).
+  onUserNotFound?: () => void;
   routeFilter?: string;
-  // Suppress the stop-name header (e.g. when a chip above already shows it).
   hideHeader?: boolean;
-  // Reports the distinct route short names currently arriving, so a parent can
-  // offer route-narrowing pills (stop-first faceted flow).
   onRoutesAvailable?: (routeShortNames: string[]) => void;
 }
 
 const REFRESH_INTERVAL = 30_000;
 
-export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hideHeader, onRoutesAvailable }: Props) {
+export default function StopBusBoard({ stopId, onPointsEarned, onUserNotFound, routeFilter, hideHeader, onRoutesAvailable }: Props) {
   const [buses, setBuses] = useState<BusData[]>([]);
   const [stopName, setStopName] = useState<string>(stopId);
   const [mode, setMode] = useState<"bus" | "luas">("bus");
@@ -68,8 +68,6 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
     return () => clearInterval(id);
   }, [fetchBuses]);
 
-  // Report the distinct routes currently arriving so a parent can offer
-  // route-narrowing pills. Keyed on a stable signature to avoid loops.
   const routeSignature = buses.map((b) => b.routeShortName).join(",");
   useEffect(() => {
     if (!onRoutesAvailable) return;
@@ -85,7 +83,6 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeSignature]);
 
-  // Optionally narrow to a single route (faceted filter), then group by routeId
   const visibleBuses = routeFilter
     ? buses.filter((b) => b.routeShortName === routeFilter)
     : buses;
@@ -103,8 +100,6 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
     );
   }
 
-  // Only show the hard error box on the very first load (no data yet). If we've
-  // already shown buses, a transient refresh failure keeps the last-known board.
   if (error && !lastFetch) {
     return (
       <div className="p-4 bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 rounded-lg text-sm text-[var(--destructive)]">
@@ -149,6 +144,7 @@ export default function StopBusBoard({ stopId, onPointsEarned, routeFilter, hide
               stopName={stopName}
               buses={routeBuses}
               onPointsEarned={onPointsEarned}
+              onUserNotFound={onUserNotFound}
             />
           ))
         )}

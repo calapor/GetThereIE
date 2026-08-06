@@ -463,6 +463,31 @@ export function nearbyStops(lat: number, lon: number, limit = 20): NearbyStop[] 
     .slice(0, limit);
 }
 
+// Stop sequence index for a trip+stop pair.
+export function getStopSequenceForTrip(tripId: string, stopId: string): number | null {
+  const d = getDb();
+  if (!d) return null;
+  const row = d
+    .prepare("SELECT stop_sequence FROM stop_times WHERE trip_id = ? AND stop_id = ? LIMIT 1")
+    .get(tripId, stopId) as { stop_sequence: number } | undefined;
+  return row?.stop_sequence ?? null;
+}
+
+// Returns stop_ids of stops that come before stopId on the given trip.
+export function getEarlierStopsOnTrip(tripId: string, stopId: string): string[] {
+  const d = getDb();
+  if (!d) return [];
+  const seq = getStopSequenceForTrip(tripId, stopId);
+  if (seq === null) return [];
+  return (
+    d
+      .prepare(
+        "SELECT stop_id FROM stop_times WHERE trip_id = ? AND stop_sequence < ? ORDER BY stop_sequence"
+      )
+      .all(tripId, seq) as { stop_id: string }[]
+  ).map((r) => r.stop_id);
+}
+
 // Mode + realtime abbreviation for a stop, so the arrivals API can route Luas
 // stops to the Luas forecast source instead of the NTA feed.
 export function getStopInfo(stopId: string): { mode: Mode; abbrev: string | null; name: string | null } | null {

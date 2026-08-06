@@ -10,4 +10,6 @@
  */
 export type * from './models/User'
 export type * from './models/Report'
+export type * from './models/WeatherCache'
+export type * from './models/NarrationCache'
 export type * from './commonInputTypes'
