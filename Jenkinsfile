@@ -19,8 +19,8 @@ spec:
       command: ["sleep"]
       args: ["infinity"]
       resources:
-        requests: { cpu: "250m", memory: "512Mi" }
-        limits:   { cpu: "2",    memory: "2Gi" }
+        requests: { cpu: "250m", memory: "512Mi", ephemeral-storage: "2Gi" }
+        limits:   { cpu: "2",    memory: "2Gi",   ephemeral-storage: "4Gi" }
 
     - name: helm
       image: alpine/helm:3.16.3
@@ -38,20 +38,19 @@ spec:
         privileged: true
       volumeMounts:
         - name: buildah-storage
-          mountPath: /var/lib/containers  
+          mountPath: /var/lib/containers
       resources:
-        # ephemeral-storage routes the agent onto a node with enough free disk.
-        # The vfs driver copies every layer in full; Next.js + pnpm store need
-        # several GB. Without this the pod can land on a nearly-full Pi node.
-        requests: { cpu: "250m", memory: "512Mi", ephemeral-storage: "12Gi" }
-        limits:   { cpu: "2",    memory: "3Gi", ephemeral-storage: "16Gi" }
+        # overlay driver: CoW layers, ~4-4.5 GB peak (vs ~9.5 GB for vfs).
+        # ephemeral-storage routes the pod onto a node with enough free disk.
+        requests: { cpu: "250m", memory: "512Mi", ephemeral-storage: "6Gi" }
+        limits:   { cpu: "2",    memory: "3Gi",   ephemeral-storage: "12Gi" }
 '''
     }
   }
 
   options {
     disableConcurrentBuilds()
-    timeout(time: 480, unit: 'MINUTES')
+    timeout(time: 60, unit: 'MINUTES')
   }
 
   environment {
@@ -93,7 +92,6 @@ spec:
           sh 'pnpm run lint'
           sh 'pnpm run typecheck'
           sh 'pnpm test'
-          sh 'pnpm run build'
         }
       }
     }
@@ -105,32 +103,41 @@ spec:
       steps {
         container('buildah') {
           sh '''
-            echo "=== Storage before cleanup ==="
+            BUILDAH="buildah --root /var/lib/containers/storage --storage-driver overlay"
+
+            echo "=== Storage before build ==="
             df -h /var/lib/containers || true
-            buildah info || true
             du -sh /var/lib/containers || true
 
-            echo "=== Cleanup ==="
-            buildah --root /var/lib/containers/storage --storage-driver vfs rm --all || true
-            buildah --root /var/lib/containers/storage --storage-driver vfs rmi --prune || true
+            echo "=== Cleanup any stale state ==="
+            $BUILDAH rm --all || true
+            $BUILDAH rmi --all --force || true
+
             echo "=== Storage after cleanup ==="
             df -h /var/lib/containers || true
-            du -sh /var/lib/containers || true
-          '''
-          sh '''
+
             echo "=== Building image ==="
-            buildah --root /var/lib/containers/storage --storage-driver vfs bud --isolation chroot \
+            export TMPDIR=/var/lib/containers/tmp && mkdir -p "$TMPDIR"
+            $BUILDAH bud --isolation chroot \
               -f Dockerfile \
               --build-arg "APP_VERSION=${IMAGE_TAG} (#${BUILD_NUMBER})" \
               -t "${REGISTRY}/${IMAGE_REPO}/web:${IMAGE_TAG}" \
               -t "${REGISTRY}/${IMAGE_REPO}/web:main" .
+
+            echo "=== Pushing image ==="
             for tag in "${IMAGE_TAG}" main; do
-              buildah --storage-driver vfs push --tls-verify=false \
+              $BUILDAH push --tls-verify=false \
                 "${REGISTRY}/${IMAGE_REPO}/web:${tag}" \
                 "docker://${REGISTRY}/${IMAGE_REPO}/web:${tag}"
             done
-            buildah --storage-driver vfs rmi "${REGISTRY}/${IMAGE_REPO}/web:${IMAGE_TAG}" || true
-            buildah --storage-driver vfs rmi "${REGISTRY}/${IMAGE_REPO}/web:main" || true
+
+            echo "=== Full prune after push ==="
+            $BUILDAH rm --all || true
+            $BUILDAH rmi --all --force || true
+
+            echo "=== Storage after prune ==="
+            df -h /var/lib/containers || true
+            du -sh /var/lib/containers || true
           '''
         }
       }
@@ -150,7 +157,7 @@ spec:
                 --set image.repository="${IMAGE_REPO}" \
                 --set image.tag="${IMAGE_TAG}" \
                 --set ntaApiKey="${NTA_API_KEY}" \
-                --wait --timeout 200m
+                --wait --atomic --cleanup-on-fail --timeout 15m
             '''
           }
         }
@@ -163,8 +170,9 @@ spec:
     always {
       container('buildah') {
         sh '''
-          buildah --root /var/lib/containers/storage --storage-driver vfs rm --all || true
-          buildah --root /var/lib/containers/storage --storage-driver vfs rmi --all || true
+          BUILDAH="buildah --root /var/lib/containers/storage --storage-driver overlay"
+          $BUILDAH rm --all || true
+          $BUILDAH rmi --all --force || true
         '''
       }
     }
