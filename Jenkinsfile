@@ -129,6 +129,8 @@ spec:
                 "${REGISTRY}/${IMAGE_REPO}/web:${tag}" \
                 "docker://${REGISTRY}/${IMAGE_REPO}/web:${tag}"
             done
+            buildah --storage-driver vfs rmi "${REGISTRY}/${IMAGE_REPO}/web:${IMAGE_TAG}" || true
+            buildah --storage-driver vfs rmi "${REGISTRY}/${IMAGE_REPO}/web:main" || true
           '''
         }
       }
