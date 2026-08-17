@@ -50,7 +50,7 @@ spec:
 
   options {
     disableConcurrentBuilds()
-    timeout(time: 60, unit: 'MINUTES')
+    timeout(time: 120, unit: 'MINUTES')
   }
 
   environment {
@@ -101,7 +101,7 @@ spec:
         expression { env.GIT_BRANCH?.endsWith('/main') }
       }
       options {
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 60, unit: 'MINUTES')
       }
       steps {
         container('buildah') {
@@ -132,7 +132,7 @@ spec:
               pushed=false
               for attempt in 1 2 3; do
                 echo "=== Push ${tag} attempt ${attempt}/3 ==="
-                if timeout 10m $BUILDAH push --tls-verify=false \
+                if timeout 20m $BUILDAH push --tls-verify=false \
                   "${REGISTRY}/${IMAGE_REPO}/web:${tag}" \
                   "docker://${REGISTRY}/${IMAGE_REPO}/web:${tag}"; then
                   pushed=true
