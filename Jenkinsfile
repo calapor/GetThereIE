@@ -100,6 +100,9 @@ spec:
       when {
         expression { env.GIT_BRANCH?.endsWith('/main') }
       }
+      options {
+        timeout(time: 30, unit: 'MINUTES')
+      }
       steps {
         container('buildah') {
           sh '''
@@ -126,9 +129,18 @@ spec:
 
             echo "=== Pushing image ==="
             for tag in "${IMAGE_TAG}" main; do
-              $BUILDAH push --tls-verify=false \
-                "${REGISTRY}/${IMAGE_REPO}/web:${tag}" \
-                "docker://${REGISTRY}/${IMAGE_REPO}/web:${tag}"
+              pushed=false
+              for attempt in 1 2 3; do
+                echo "=== Push ${tag} attempt ${attempt}/3 ==="
+                if timeout 10m $BUILDAH push --tls-verify=false \
+                  "${REGISTRY}/${IMAGE_REPO}/web:${tag}" \
+                  "docker://${REGISTRY}/${IMAGE_REPO}/web:${tag}"; then
+                  pushed=true
+                  break
+                fi
+                [ "$attempt" -lt 3 ] && echo "Push stalled, retrying in 20s..." && sleep 20
+              done
+              $pushed || { echo "Push failed for ${tag} after 3 attempts"; exit 1; }
             done
 
             echo "=== Full prune after push ==="
