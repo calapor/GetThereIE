@@ -169,7 +169,7 @@ spec:
                 --set image.repository="${IMAGE_REPO}" \
                 --set image.tag="${IMAGE_TAG}" \
                 --set ntaApiKey="${NTA_API_KEY}" \
-                --wait --atomic --cleanup-on-fail --timeout 15m
+                --wait --atomic --cleanup-on-fail --timeout 45m
             '''
           }
         }
