@@ -1,0 +1,42 @@
+{{- if .Values.imagePrune.enabled }}
+{{- range .Values.imagePrune.nodes }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "bustracker.fullname" $ }}-img-prune-{{ . }}
+  labels:
+    {{- include "bustracker.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: image-prune
+spec:
+  schedule: {{ $.Values.imagePrune.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          nodeName: {{ . }}
+          hostPID: true
+          containers:
+            - name: prune
+              image: busybox:1.36
+              securityContext:
+                privileged: true
+              command:
+                - nsenter
+                - "-t"
+                - "1"
+                - "-m"
+                - "-u"
+                - "-i"
+                - "-n"
+                - "--"
+                - /usr/local/bin/k3s
+                - crictl
+                - rmi
+                - --prune
+{{- end }}
+{{- end }}
