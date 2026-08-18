@@ -7,6 +7,7 @@ metadata:
     app.kubernetes.io/component: web
 spec:
   replicas: {{ .Values.web.replicas }}
+  progressDeadlineSeconds: {{ .Values.web.progressDeadlineSeconds }}
   # SQLite is a single-writer DB; only one pod should run at a time.
   strategy:
     type: Recreate
@@ -68,14 +69,16 @@ spec:
             httpGet:
               path: /api/healthz
               port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
+            initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.web.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.web.readinessProbe.failureThreshold }}
           livenessProbe:
             httpGet:
               path: /api/healthz
               port: http
-            initialDelaySeconds: 20
-            periodSeconds: 20
+            initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.web.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.web.livenessProbe.failureThreshold }}
           resources:
             {{- toYaml .Values.web.resources | nindent 12 }}
           {{- if .Values.persistence.enabled }}

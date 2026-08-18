@@ -14,6 +14,17 @@ imagePullSecrets: []
 web:
   replicas: 1
   port: 3000
+  # Give the pod 30 min to become Ready before Kubernetes marks the rollout
+  # failed. Pi nodes can be slow to pull + run Prisma init + start Next.js.
+  progressDeadlineSeconds: 1800
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 6   # 30s initial + 6×10s = 90s before giving up
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 20
+    failureThreshold: 3
   resources:
     requests: { cpu: 100m, memory: 256Mi }
     limits:   { cpu: "1", memory: 512Mi }
@@ -50,3 +61,13 @@ ntaApiKey: ""
 gtfsRefresh:
   enabled: true
   schedule: "17 3 * * 1"   # weekly, Monday 03:17 Europe/Dublin
+
+# Weekly containerd image prune on each Pi node to prevent ephemeral-storage
+# exhaustion from accumulated image layers across deployments.
+imagePrune:
+  enabled: true
+  schedule: "30 4 * * 1"   # Monday 04:30, after GTFS refresh
+  nodes:
+    - rpi1
+    - rpi2
+    - rpi3
